@@ -37,6 +37,8 @@ int		main(int ac, char **av)
 	ft_bzero(opt, sizeof(opt));
 	opt->ports = NULL;
 	opt->ips = NULL;
+	if (ac <= 1)
+		bad_usage(NULL, 0);
 	ret = nmap_optloop(opt, ac, av);
 	clean_env(opt);
 	return (ret);

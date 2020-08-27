@@ -21,75 +21,71 @@ int	    bad_usage(const char *arg, int context)
 
 int		read_ports(t_opt *options, char *const args[], int *optind)
 {
-	(void)args;
 	(void)options;
-	(void)optind;
+	printf("%s\n", args[*optind + 1]);
+	(*optind)++;
 	return (0);
 }
 
 int		fread_ipaddr(t_opt *options, char *const args[], int *optind)
 {
-	(void)args;
 	(void)options;
-	(void)optind;
+	printf("%s\n", args[*optind + 1]);
+	(*optind)++;
 	return (0);
 }
 
 int		read_ipaddr(t_opt *options, char *const args[], int *optind)
 {
-	(void)args;
 	(void)options;
-	(void)optind;
+	printf("%s\n", args[*optind + 1]);
+	(*optind)++;
 	return (0);
 }
 
 int		read_speedup(t_opt *options, char *const args[], int *optind)
 {
-	(void)args;
 	(void)options;
-	(void)optind;
+	printf("%s\n", args[*optind + 1]);
+	(*optind)++;
 	return (0);
 }
 
 int		read_scantypes(t_opt *options, char *const args[], int *optind)
 {
-	(void)args;
 	(void)options;
-	(void)optind;
+	printf("%s\n", args[*optind + 1]);
+	(*optind)++;
 	return (0);
 }
 
 char    nmap_getopt(int nargs, char *const args[], int *optind) // pas finie
 {
-	if (nargs < 2)
-	{
-		return 'h';
-	}
-	else if (!ft_strcmp("--help", args[*optind]))
+	if (*optind == nargs || !ft_strcmp("--help", args[*optind]))
     {
         return 'h';
     }
-    else if (!ft_strcmp("--ports", args[*optind]))
+    else if (!ft_strcmp("--ports", args[*optind]) && *optind + 1 < nargs)
     {
         return 'p';
     }
-    else if (!ft_strcmp("--ip", args[*optind]))
+    else if (!ft_strcmp("--ip", args[*optind]) && *optind + 1 < nargs)
     {
         return 'i';
     }
-    else if (!ft_strcmp("--file", args[*optind]))
+    else if (!ft_strcmp("--file", args[*optind]) && *optind + 1 < nargs)
     {
         return 'f';
     }
-    else if (!ft_strcmp("--speedup", args[*optind]))
+    else if (!ft_strcmp("--speedup", args[*optind]) && *optind + 1 < nargs)
     {
         return 'v';
     }
-    else if (!ft_strcmp("--scan", args[*optind]))
+    else if (!ft_strcmp("--scan", args[*optind]) && *optind + 1 < nargs)
     {
         return 's';
     }
-	return (-1);
+	return 'h';
 }
 
 int     nmap_optloop(t_opt *options, int nargs, char *const args[])
@@ -98,7 +94,7 @@ int     nmap_optloop(t_opt *options, int nargs, char *const args[])
     int     optind = 1;
 	int		ret = 0;
 
-    while (optind < nargs && ret == 0 && (opt = nmap_getopt(nargs, args, &optind)))
+    while (ret == 0 && optind < nargs && (opt = nmap_getopt(nargs, args, &optind)))
     {
         switch(opt)
         {
