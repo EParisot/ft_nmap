@@ -1,6 +1,6 @@
 #include "../includes/ft_nmap.h"
 
-int	    bad_usage(t_opt *options, const char *arg, int context)
+int	    bad_usage(const char *arg, int context)
 {
     const char *usage = "ft_nmap by eparisot and maabou-h @42 Paris\n\
                         Usage: ft_nmap [--help] [--ports [NUMBER/RANGE]] --ip IPADDRESS [--speedup [NUMBER]] [--scan [TYPE]]\n\
@@ -12,13 +12,50 @@ int	    bad_usage(t_opt *options, const char *arg, int context)
                         \t--speedup\t[250 max] number of parallel threads to use\n\
                         \t--scan\t\tSYN/NULL/FIN/XMAS/ACK/UDP";
 
-    fprintf(stderr, "argument error: %s, context %d\n", arg, context);
+    if (context)
+		fprintf(stderr, "argument error: %s, context %d\n", arg, context);
+	else
+		printf("%s\n", usage);	
 	return (-1);
 }
 
 int		read_ports(t_opt *options, char *const args[], int *optind)
 {
+	(void)args;
+	(void)options;
+	(void)optind;
+	return (0);
+}
 
+int		fread_ipaddr(t_opt *options, char *const args[], int *optind)
+{
+	(void)args;
+	(void)options;
+	(void)optind;
+	return (0);
+}
+
+int		read_ipaddr(t_opt *options, char *const args[], int *optind)
+{
+	(void)args;
+	(void)options;
+	(void)optind;
+	return (0);
+}
+
+int		read_speedup(t_opt *options, char *const args[], int *optind)
+{
+	(void)args;
+	(void)options;
+	(void)optind;
+	return (0);
+}
+
+int		read_scantypes(t_opt *options, char *const args[], int *optind)
+{
+	(void)args;
+	(void)options;
+	(void)optind;
 	return (0);
 }
 
@@ -26,7 +63,11 @@ char    nmap_getopt(int nargs, char *const args[], int *optind) // pas finie
 {
     const char  *target = args[*optind];
 
-    if (!ft_strcmp("--help", target))
+	if (nargs < 2)
+	{
+		return 'h';
+	}
+	else if (!ft_strcmp("--help", target))
     {
         return 'h';
     }
@@ -64,7 +105,7 @@ int     nmap_optloop(t_opt *options, int nargs, char *const args[])
         switch(opt)
         {
             case 'h':
-            	ret = bad_usage(options, NULL, 0);
+            	ret = bad_usage(NULL, 0);
 			break;
             case 'p':
             	ret = read_ports(options, args, &optind);
@@ -76,10 +117,10 @@ int     nmap_optloop(t_opt *options, int nargs, char *const args[])
             	ret = fread_ipaddr(options, args, &optind);
 			break;
             case 'v':
-            	ret = read_speedup();
+            	ret = read_speedup(options, args, &optind);
 			break;
             case 's':
-            	ret = read_scantypes();
+            	ret = read_scantypes(options, args, &optind);
 			break;
 			if (ret)
 				return (-1);
