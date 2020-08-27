@@ -29,12 +29,7 @@ typedef struct  s_opt
 void	clean_env(t_opt *opt);
 void	del(void *addr, size_t size);
 
-int    bad_usage(const char *arg, int context);							/* Handle error on parsing argument and quit gracefully */
-
-int    read_ipaddr(t_opt *options, char *const args[], int *optind);	/* Treat the --ip argument */
-int    fread_ipaddr(t_opt *options, char *const args[], int *optind);	/* Treat the --file argument */
-int    read_speedup(t_opt *options, char *const args[], int *optind);	/* Treat the --speedup argument */
-int    read_scantypes(t_opt *options, char *const args[], int *optind);	/* Treat the --scan argument */
+int    	bad_usage(const char *arg, int context);						/* Handle error on parsing argument and quit gracefully */
 
 char    nmap_getopt(int nargs, char *const args[], int *optind);		/* Detect option to be treated and how to parse next argument */
 int     nmap_optloop(t_opt *options, int nargs, char *const args[]);	/* Iterate through argv to parse arguments from command line */

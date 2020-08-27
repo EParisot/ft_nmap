@@ -19,12 +19,41 @@ int	    bad_usage(const char *arg, int context)
 	return (-1);
 }
 
-int		read_ports(t_opt *options, char *const args[], int *optind)
+static int		append_range(t_opt *options, char **dash_tab)
 {
 	(void)options;
-	printf("%s\n", args[*optind + 1]);
-	(*optind)++;
+	for (int i = 0; dash_tab[i]; i++)
+		printf("%s ", dash_tab[i]);
+	printf("\n");
 	return (0);
+}
+
+static int		read_ports(t_opt *options, char *const args[], int *optind)
+{
+	(void)options;
+	char	**comas_tab;
+	char	**dash_tab;
+	int		ret;
+
+	ret = 0;
+	if ((comas_tab = ft_strsplit(args[*optind + 1], ',')) == NULL)
+		return (-1);
+	for (size_t i = 0; i < ft_tablen(comas_tab); i++)
+	{
+		if ((dash_tab = ft_strsplit(comas_tab[i], '-')) == NULL)
+			return (-1);
+		ret = append_range(options, dash_tab);
+		for (size_t j = 0; dash_tab[j]; j++)
+			free(dash_tab[j]);
+		free(dash_tab);
+		if (ret)
+			break;
+	}
+	(*optind)++;
+	for (size_t i = 0; comas_tab[i]; i++)
+		free(comas_tab[i]);
+	free(comas_tab);
+	return (ret);
 }
 
 int		fread_ipaddr(t_opt *options, char *const args[], int *optind)

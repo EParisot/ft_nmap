@@ -20,20 +20,20 @@ static int		test_chr(char c, char chr)
 	return (0);
 }
 
-static char		*r_str(char *s, int len, int w, char chr)
+static char		*r_str(char *s, int *len, int *w, char chr)
 {
 	if (s == NULL)
 		return (NULL);
-	while (s[len])
+	while (s[*len])
 	{
-		if (s[len] && test_chr(s[len], chr) && s[len - 1] &&
-				!test_chr(s[len - 1], chr))
-			w++;
-		else if ((s[len + 1] == '\0') && !test_chr(s[len], chr))
-			w++;
-		if (test_chr(s[len], chr))
-			s[len] = '\0';
-		len++;
+		if (s[*len] && test_chr(s[*len], chr) && s[*len - 1] &&
+				!test_chr(s[*len - 1], chr))
+			(*w)++;
+		else if ((s[*len + 1] == '\0') && !test_chr(s[*len], chr))
+			(*w)++;
+		if (test_chr(s[*len], chr))
+			s[*len] = '\0';
+		(*len)++;
 	}
 	return (s);
 }
@@ -50,7 +50,7 @@ char			**ft_strsplit(char const *s, char c)
 		return (NULL);
 	len = 0;
 	w = 0;
-	if ((str = r_str(ft_strdup(s), len, w, c)) == NULL)
+	if ((str = r_str(ft_strdup(s), &len, &w, c)) == NULL)
 		return (NULL);
 	if ((r = (char **)malloc(sizeof(char *) * (w + 1))) == NULL)
 		return (NULL);
@@ -58,9 +58,10 @@ char			**ft_strsplit(char const *s, char c)
 	i = -1;
 	while (++i < len)
 	{
-		if (str[i] && (!str[i - 1] || (i == 0)))
+		if (str[i] && ((i == 0) || !str[i - 1]))
 			r[w++] = ft_strdup(&str[i]);
 	}
 	r[w] = NULL;
+	free(str);
 	return (r);
 }
