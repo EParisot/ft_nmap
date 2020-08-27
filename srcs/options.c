@@ -61,33 +61,31 @@ int		read_scantypes(t_opt *options, char *const args[], int *optind)
 
 char    nmap_getopt(int nargs, char *const args[], int *optind) // pas finie
 {
-    const char  *target = args[*optind];
-
 	if (nargs < 2)
 	{
 		return 'h';
 	}
-	else if (!ft_strcmp("--help", target))
+	else if (!ft_strcmp("--help", args[*optind]))
     {
         return 'h';
     }
-    else if (!ft_strcmp("--ports", target))
+    else if (!ft_strcmp("--ports", args[*optind]))
     {
         return 'p';
     }
-    else if (!ft_strcmp("--ip", target))
+    else if (!ft_strcmp("--ip", args[*optind]))
     {
         return 'i';
     }
-    else if (!ft_strcmp("--file", target))
+    else if (!ft_strcmp("--file", args[*optind]))
     {
         return 'f';
     }
-    else if (!ft_strcmp("--speedup", target))
+    else if (!ft_strcmp("--speedup", args[*optind]))
     {
         return 'v';
     }
-    else if (!ft_strcmp("--scan", target))
+    else if (!ft_strcmp("--scan", args[*optind]))
     {
         return 's';
     }
@@ -97,10 +95,10 @@ char    nmap_getopt(int nargs, char *const args[], int *optind) // pas finie
 int     nmap_optloop(t_opt *options, int nargs, char *const args[])
 {
     char    opt = 0;
-    int     optind = 0;
+    int     optind = 1;
 	int		ret = 0;
 
-    while (ret == 0 && (opt = nmap_getopt(nargs, args, &optind)))
+    while (optind < nargs && ret == 0 && (opt = nmap_getopt(nargs, args, &optind)))
     {
         switch(opt)
         {
