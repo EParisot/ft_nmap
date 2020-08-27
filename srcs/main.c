@@ -32,7 +32,10 @@ int		main(int ac, char **av)
 	if ((opt = (t_opt *)malloc(sizeof(t_opt))) == NULL)
 		return (-1);
 	if (nmap_optloop(opt, ac, av))
+	{
+		clean_env(opt);
 		return (-1);
+	}
 	clean_env(opt);
 	return (0);
 }
