@@ -171,5 +171,6 @@ int     nmap_optloop(t_opt *options, int nargs, char *const args[])
         optind++;
     }
 	// TODO Set default values
+	// TODO Print opt summary
 	return (0);
 }
