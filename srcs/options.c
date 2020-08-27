@@ -41,7 +41,6 @@ static int		append_range(t_opt *options, char **dash_tab)
 
 static int		read_ports(t_opt *options, char *const args[], int *optind)
 {
-	(void)options;
 	char	**comas_tab;
 	char	**dash_tab;
 	int		ret;
