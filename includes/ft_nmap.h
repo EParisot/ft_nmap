@@ -26,6 +26,13 @@ typedef struct  s_opt
     t_list      *ips;       /* nombre d'ip variable, une liste c'est bien */
 }               t_opt;
 
+typedef struct	s_range
+{
+	int			start;
+	int			end;
+}				t_range;
+
+
 void	clean_env(t_opt *opt);
 void	del(void *addr, size_t size);
 

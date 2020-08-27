@@ -21,10 +21,21 @@ int	    bad_usage(const char *arg, int context)
 
 static int		append_range(t_opt *options, char **dash_tab)
 {
-	(void)options;
-	for (int i = 0; dash_tab[i]; i++)
-		printf("%s ", dash_tab[i]);
-	printf("\n");
+	t_list	*new_lst;
+	t_range	range;
+
+
+	range.start = ft_atoi(dash_tab[0]);
+	if (ft_tablen(dash_tab) > 1)
+		range.end = ft_atoi(dash_tab[1]);
+	else
+		range.end = range.start;
+	if ((new_lst = ft_lstnew(&range, sizeof(range))) == NULL)
+		return (-1);
+	if (options->ports)
+		ft_lstaddend(&options->ports, new_lst);
+	else
+		options->ports = new_lst;
 	return (0);
 }
 
@@ -53,13 +64,23 @@ static int		read_ports(t_opt *options, char *const args[], int *optind)
 	for (size_t i = 0; comas_tab[i]; i++)
 		free(comas_tab[i]);
 	free(comas_tab);
+
+	// DEBUG SECTION
+	t_list	*tmp = options->ports;
+	while (tmp)
+	{
+		printf("Debug ports : %d %d\n", ((t_range*)(tmp->content))->start, ((t_range*)(tmp->content))->end);
+		tmp = tmp->next;
+	}
+	/////////////////
+
 	return (ret);
 }
 
 int		fread_ipaddr(t_opt *options, char *const args[], int *optind)
 {
 	(void)options;
-	printf("%s\n", args[*optind + 1]);
+	printf("Debug ip file : %s\n", args[*optind + 1]);
 	(*optind)++;
 	return (0);
 }
@@ -67,7 +88,7 @@ int		fread_ipaddr(t_opt *options, char *const args[], int *optind)
 int		read_ipaddr(t_opt *options, char *const args[], int *optind)
 {
 	(void)options;
-	printf("%s\n", args[*optind + 1]);
+	printf("Debug ip : %s\n", args[*optind + 1]);
 	(*optind)++;
 	return (0);
 }
@@ -75,7 +96,7 @@ int		read_ipaddr(t_opt *options, char *const args[], int *optind)
 int		read_speedup(t_opt *options, char *const args[], int *optind)
 {
 	(void)options;
-	printf("%s\n", args[*optind + 1]);
+	printf("Debug speedup : %s\n", args[*optind + 1]);
 	(*optind)++;
 	return (0);
 }
@@ -83,7 +104,7 @@ int		read_speedup(t_opt *options, char *const args[], int *optind)
 int		read_scantypes(t_opt *options, char *const args[], int *optind)
 {
 	(void)options;
-	printf("%s\n", args[*optind + 1]);
+	printf("Debug scantypes : %s\n", args[*optind + 1]);
 	(*optind)++;
 	return (0);
 }

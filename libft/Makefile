@@ -90,7 +90,7 @@ OBJS	=	$(SRCS:.c=.o)
 
 RM		=	rm -f
 
-CFLAGS	=	-Wall -Wextra -Werror -g3
+CFLAGS	=	-Wall -Wextra -Werror
 
 $(NAME)	:	$(OBJS)
 	ar rc $(NAME) $(OBJS)
