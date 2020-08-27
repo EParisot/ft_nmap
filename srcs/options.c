@@ -100,7 +100,7 @@ int     nmap_optloop(t_opt *options, int nargs, char *const args[])
     int     optind = 0;
 	int		ret = 0;
 
-    while ((opt = nmap_getopt(nargs, args, &optind)))
+    while (ret == 0 && (opt = nmap_getopt(nargs, args, &optind)))
     {
         switch(opt)
         {
