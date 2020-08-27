@@ -16,5 +16,12 @@
 
 # include "../libft/libft.h"
 
+typedef struct  s_opt
+{
+    uint8_t     threads;    /* 250 threads rentrent large dans un uint8_t */
+    uint8_t     scanflag;   /* 8 bits suffisent pour caler tous les flags possibles en binaire */ 
+    t_lst       *ports;     /* liste de ports */
+    t_lst       *ips;       /* nombre d'ip variable, une liste c'est bien */
+}               t_opt;
 
 #endif
