@@ -13,6 +13,7 @@
 NAME	=	ft_nmap
 
 SRCS	=	srcs/main.c \
+			srcs/options.c \
 
 INC		=	includes/ft_nmap.h
 

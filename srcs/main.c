@@ -12,42 +12,27 @@
 
 #include "../includes/ft_nmap.h"
 
-static void	del(void *addr, size_t size)
+void	del(void *addr, size_t size)
 {
 	(void)size;
 	free(addr);
 }
 
-static void	clean_env(t_env *env)
+void	clean_env(t_opt *opt)
 {
-	ft_lstdel(&env->ports, del);
-	free(env);
+	ft_lstdel(&opt->ports, del);
+	ft_lstdel(&opt->ips, del);
+	free(opt);
 }
 
-static int	parse_ports(int ac, char **av, t_env *env)
+int		main(int ac, char **av)
 {
-	(void)ac;
-	(void)av;
-	(void)env;
-	// TODO parse ports opt here
-	return (0);
-}
+	t_opt	*opt;
 
-static int	parse_opt(int ac, char **av, t_env *env)
-{
-	// TODO parse options here
-	parse_ports(ac, av, env);
-	return (0);
-}
-
-int			main(int ac, char **av)
-{
-	t_env	*env;
-
-	if ((env = (t_env *)malloc(sizeof(t_env))) == NULL)
+	if ((opt = (t_opt *)malloc(sizeof(t_opt))) == NULL)
 		return (-1);
-	if (parse_opt(ac, av, env))
+	if (nmap_optloop(opt, ac, av))
 		return (-1);
-	clean_env(env);
+	clean_env(opt);
 	return (0);
 }

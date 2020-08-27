@@ -1,14 +1,4 @@
-#include "ft_nmap.h"
-
-void    bad_usage(t_opt *options, const char *arg, int context);        /* Handle error on parsing argument and quit gracefully */
-
-void    read_ipaddr(t_opt *options, char *const args[], int *optind);   /* Treat the --ip argument */
-void    fread_ipaddr(t_opt *options, char *const args[], int *optind);  /* Treat the --file argument */
-void    read_speedup();                                                 /* Treat the --speedup argument */
-void    read_scantypes();                                               /* Treat the --scan argument */
-
-char    nmap_getopt(int nargs, char *const args[], int *optind);        /* Detect option to be treated and how to parse next argument */
-int     nmap_optloop(t_opt *options, int nargs, char *const args[]);    /* Iterate through argv to parse arguments from command line */
+#include "../includes/ft_nmap.h"
 
 void    bad_usage(t_opt *options, const char *arg, int context)
 {
@@ -22,8 +12,14 @@ void    bad_usage(t_opt *options, const char *arg, int context)
                         \t--speedup\t[250 max] number of parallel threads to use\n\
                         \t--scan\t\tSYN/NULL/FIN/XMAS/ACK/UDP";
 
-    dprintf(2, "argument error: %s, context %d\n", arg, context);
-    //free_data(options);
+    fprintf(stderr, "argument error: %s, context %d\n", arg, context);
+    clean_env(options);
+}
+
+int		read_ports(t_opt *options, char *const args[], int *optind)
+{
+
+	return (0);
 }
 
 char    nmap_getopt(int nargs, char *const args[], int *optind) // pas finie
@@ -54,6 +50,7 @@ char    nmap_getopt(int nargs, char *const args[], int *optind) // pas finie
     {
         return 's';
     }
+	return (-1);
 }
 
 int     nmap_optloop(t_opt *options, int nargs, char *const args[])
@@ -66,18 +63,25 @@ int     nmap_optloop(t_opt *options, int nargs, char *const args[])
         switch(opt)
         {
             case 'h':
-            bad_usage(options, NULL, 0);
+            	bad_usage(options, NULL, 0);
+			break;
             case 'p':
-            // placeholder for port func
+            	read_ports(options, args, &optind);
+			break;
             case 'i':
-            read_ipaddr(options, args, &optind);
+            	read_ipaddr(options, args, &optind);
+			break;
             case 'f':
-            fread_ipaddr(options, args, &optind);
+            	fread_ipaddr(options, args, &optind);
+			break;
             case 'v':
-            read_speedup();
+            	read_speedup();
+			break;
             case 's':
-            read_scantypes();
+            	read_scantypes();
+			break;
         }
         optind++;
     }
+	return (0);
 }
