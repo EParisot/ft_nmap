@@ -15,6 +15,17 @@
 # define FT_NMAP_H
 
 # include "../libft/libft.h"
+# include <stdlib.h>
+
+typedef struct s_env
+{
+	char		*ip_str;
+	char		*file_name;
+	int			speedup;
+	int			scan_type;
+	t_list		*ports;
+
+}				t_env;
 
 
 #endif
