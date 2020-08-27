@@ -1,6 +1,6 @@
 #include "../includes/ft_nmap.h"
 
-int	    bad_usage(const char *arg, int context)
+int	    	bad_usage(const char *arg, int context)
 {
     const char *usage = "ft_nmap by eparisot and maabou-h @42 Paris\n\
                         Usage: ft_nmap [--help] [--ports [NUMBER/RANGE]] --ip IPADDRESS [--speedup [NUMBER]] [--scan [TYPE]]\n\
@@ -19,7 +19,7 @@ int	    bad_usage(const char *arg, int context)
 	return (-1);
 }
 
-static int		append_range(t_opt *options, char **dash_tab)
+static int	append_range(t_opt *options, char **dash_tab)
 {
 	t_list	*new_lst;
 	t_range	range;
@@ -39,7 +39,7 @@ static int		append_range(t_opt *options, char **dash_tab)
 	return (0);
 }
 
-static int		read_ports(t_opt *options, char *const args[], int *optind)
+static int	read_ports(t_opt *options, char *const args[], int *optind)
 {
 	char	**comas_tab;
 	char	**dash_tab;
@@ -76,7 +76,7 @@ static int		read_ports(t_opt *options, char *const args[], int *optind)
 	return (ret);
 }
 
-int		fread_ipaddr(t_opt *options, char *const args[], int *optind)
+int		fread_ipaddr(t_opt *options, char *const args[], int *optind)	//TODO
 {
 	(void)options;
 	printf("Debug ip file : %s\n", args[*optind + 1]);
@@ -84,7 +84,7 @@ int		fread_ipaddr(t_opt *options, char *const args[], int *optind)
 	return (0);
 }
 
-int		read_ipaddr(t_opt *options, char *const args[], int *optind)
+int		read_ipaddr(t_opt *options, char *const args[], int *optind)	//TODO
 {
 	(void)options;
 	printf("Debug ip : %s\n", args[*optind + 1]);
@@ -94,13 +94,13 @@ int		read_ipaddr(t_opt *options, char *const args[], int *optind)
 
 int		read_speedup(t_opt *options, char *const args[], int *optind)
 {
-	(void)options;
+	options->threads = ft_atoi(args[*optind + 1]);
 	printf("Debug speedup : %s\n", args[*optind + 1]);
 	(*optind)++;
 	return (0);
 }
 
-int		read_scantypes(t_opt *options, char *const args[], int *optind)
+int		read_scantypes(t_opt *options, char *const args[], int *optind)	//TODO
 {
 	(void)options;
 	printf("Debug scantypes : %s\n", args[*optind + 1]);
@@ -108,7 +108,7 @@ int		read_scantypes(t_opt *options, char *const args[], int *optind)
 	return (0);
 }
 
-char    nmap_getopt(int nargs, char *const args[], int *optind) // pas finie
+char    nmap_getopt(int nargs, char *const args[], int *optind)	//TODO
 {
 	if (*optind == nargs || !ft_strcmp("--help", args[*optind]))
     {
@@ -170,5 +170,6 @@ int     nmap_optloop(t_opt *options, int nargs, char *const args[])
         }
         optind++;
     }
+	// TODO Set default values
 	return (0);
 }
