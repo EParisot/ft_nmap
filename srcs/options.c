@@ -63,16 +63,6 @@ static int	read_ports(t_opt *options, char *const args[], int *optind)
 	for (size_t i = 0; comas_tab[i]; i++)
 		free(comas_tab[i]);
 	free(comas_tab);
-
-	// DEBUG SECTION
-	t_list	*tmp = options->ports;
-	while (tmp)
-	{
-		printf("Debug ports : %d %d\n", ((t_range*)(tmp->content))->start, ((t_range*)(tmp->content))->end);
-		tmp = tmp->next;
-	}
-	/////////////////
-
 	return (ret);
 }
 
@@ -137,6 +127,54 @@ char    nmap_getopt(int nargs, char *const args[], int *optind)	//TODO
 	return 'h';
 }
 
+static int		set_defaults(t_opt *options)
+{
+	char	*dft_ports[2];
+
+	dft_ports[0] = "0\0";
+	dft_ports[1] = "1024\0";
+	/*if (options->ips == NULL)
+	{
+		bad_usage("--ip", 0);
+		return (-1);
+	}*/
+	if (options->ports == NULL)
+		if (append_range(options, dft_ports))
+			return (-1);
+	if (options->scanflag == 0)
+		options->scanflag = 0xff;
+	return (0);
+}
+
+static void		print_summary(t_opt *options)
+{
+	t_list		*tmp_ports = options->ports;
+	t_list		*tmp_ips = options->ips;
+	char		*flagstr[6] = {"SYN", "NULL", "ACK", "FIN", "XMAS", "UDP"};
+	
+	printf("IP(s) :");
+	while (tmp_ips)
+	{
+		printf(" %s", "TODO");
+		tmp_ips = tmp_ips->next;
+		(tmp_ips) ? printf(",") : printf("\n");
+	}
+	printf("Ports : ");
+	while (tmp_ports)
+	{
+		printf("%d-%d", ((t_range*)(tmp_ports->content))->start, ((t_range*)(tmp_ports->content))->end);
+		tmp_ports = tmp_ports->next;
+		(tmp_ports) ? printf(",") : printf("\n");
+	}
+	printf("Threads : %d\n", options->threads);
+	printf("Packets types :");
+	for (int i = 0; i < 6; i++)
+	{
+		((options->scanflag >> i) & 1) ? printf(" %s", flagstr[i]) : 0;
+		(i < 5) ? printf(",") : printf("\n");
+	}
+}
+
 int     nmap_optloop(t_opt *options, int nargs, char *const args[])
 {
     char    opt = 0;
@@ -170,7 +208,8 @@ int     nmap_optloop(t_opt *options, int nargs, char *const args[])
         }
         optind++;
     }
-	// TODO Set default values
-	// TODO Print opt summary
+	if (set_defaults(options))
+		return (-1);
+	print_summary(options);
 	return (0);
 }

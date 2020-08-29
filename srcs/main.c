@@ -38,8 +38,12 @@ int		main(int ac, char **av)
 	opt->ports = NULL;
 	opt->ips = NULL;
 	if (ac <= 1)
+	{
 		bad_usage(NULL, 0);
-	ret = nmap_optloop(opt, ac, av);
+		ret = (-1);
+	}
+	if (ret == 0)
+		ret = nmap_optloop(opt, ac, av);
 	clean_env(opt);
 	return (ret);
 }
