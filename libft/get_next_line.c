@@ -14,22 +14,24 @@
 #include <stdlib.h>
 #include "libft.h"
 
-#define BUFF_SIZE 4096
+#define BUFF_SIZE 64
 
 static char	*ft_join(char *s1, char *s2, size_t n)
 {
 	char	*new;
 	size_t	i;
 	size_t	pos;
+	int		len;
 
-	if (!(new = ft_memalloc((sizeof(char) * (ft_strlen(s1) + n + 1)))))
+	len = ft_strlen(s1) + n + 1;
+	if (len == 1 || !(new = (char*)malloc((sizeof(char) * len))))
 		return (NULL);
 	i = 0;
 	pos = 0;
-	while (s1[i])
+	while (s1[i] != '\0')
 		new[pos++] = s1[i++];
 	i = 0;
-	while (n-- && s2[i])
+	while (n-- && s2[i] != '\0')
 		new[pos++] = s2[i++];
 	new[pos] = '\0';
 	return (new);
@@ -40,8 +42,8 @@ static int	ft_buf(char **line, char **buf)
 	char	*tmp;
 
 	tmp = *line;
-	*line = ft_join(tmp, *buf, (ft_strlen(*buf) -
-				ft_strlen(ft_strchr(*buf, '\n'))));
+	*line = ft_join(*line, *buf, (ft_strlen(*buf) -
+				ft_strlen((ft_strchr(*buf, '\n')))));
 	free(tmp);
 	tmp = *buf;
 	*buf = ft_strdup(ft_strchr(*buf, '\n'));

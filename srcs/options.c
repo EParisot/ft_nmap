@@ -1,5 +1,11 @@
 #include "../includes/ft_nmap.h"
 
+static int			retmsg(const char *str, const char* arg, int ret)
+{
+	fprintf(stderr, str, arg);
+	return (ret);
+}
+
 int	    	bad_usage(const char *arg, int context)
 {
     const char *usage = "ft_nmap by eparisot and maabou-h @42 Paris\n\
@@ -46,18 +52,20 @@ static int	read_ports(t_opt *options, char *const args[], int *optind)
 	int		ret;
 
 	ret = 0;
+	if (args[*optind + 1] == NULL)
+		return (retmsg("ft_nmap: error: missing argument near %s\n", "--port", -1));
 	if ((comas_tab = ft_strsplit(args[*optind + 1], ',')) == NULL)
-		return (-1);
+		return (retmsg("ft_nmap: error parsing port argument: %s\n", args[*optind + 1], -1));
 	for (size_t i = 0; i < ft_tablen(comas_tab); i++)
 	{
 		if ((dash_tab = ft_strsplit(comas_tab[i], '-')) == NULL)
-			return (-1);
+			return (retmsg("ft_nmap: error parsing port argument: %s\n", args[*optind + 1], -1));
 		ret = append_range(options, dash_tab);
 		for (size_t j = 0; dash_tab[j]; j++)
 			free(dash_tab[j]);
 		free(dash_tab);
 		if (ret)
-			break;
+			break ;
 	}
 	(*optind)++;
 	for (size_t i = 0; comas_tab[i]; i++)
@@ -66,7 +74,7 @@ static int	read_ports(t_opt *options, char *const args[], int *optind)
 	return (ret);
 }
 
-static inline int	append_ip(t_opt *options, char *const ip)
+static int	append_ip(t_opt *options, char *const ip)
 {
 	t_list				*new_lst;
 	struct sockaddr_in	sa;
@@ -83,21 +91,23 @@ static inline int	append_ip(t_opt *options, char *const ip)
 	return (0);
 }
 
-int		fread_ipaddr(t_opt *options, char *const args[], int *optind)	//TODO
+static int	fread_ipaddr(t_opt *options, char *const args[], int *optind)
 {
 	FILE				*fp;
 	char				*ipbuf;
 	int					fd;
 
-	if ((fp = fopen(args[*optind + 1], "r")) == NULL)
-		return (-1);
+	if (args[*optind + 1] == NULL || ((fp = fopen(args[*optind + 1], "r")) == NULL))
+		return (args[*optind + 1] == NULL  ?
+			retmsg("ft_nmap: error: missing argument near %s\n", "--file", -1)
+			: retmsg("ft_nmap: error: bad argument for --file option %s\n", args[*optind + 1], -1));
 	fd = fileno(fp);
 	while (get_next_line(fd, &ipbuf) > 0)
 	{
 		if (!ipbuf || !ipbuf[0])
 			break ;
 		if (append_ip(options, ipbuf) == -1)
-			return (-1);
+			return (retmsg("ft_nmap: error with ip in file: %s\n", ipbuf ? ipbuf : NULL, -1));
 		free(ipbuf);
 	}
 	fclose(fp);
@@ -105,24 +115,26 @@ int		fread_ipaddr(t_opt *options, char *const args[], int *optind)	//TODO
 	return (0);
 }
 
-int		read_ipaddr(t_opt *options, char *const args[], int *optind)	//TODO
+static int	read_ipaddr(t_opt *options, char *const args[], int *optind)
 {
 	if (args[*optind + 1] == NULL)
-		return (-1);
+		return (retmsg("ft_nmap: error: missing argument near %s\n", "--ip", -1));
 	if (append_ip(options, args[*optind + 1]) == -1)
-		return (-1);
+		return (retmsg("ft_nmap: error with ip: %s\n", args[*optind + 1], -1));
 	(*optind)++;
 	return (0);
 }
 
-int		read_speedup(t_opt *options, char *const args[], int *optind)
+static int	read_speedup(t_opt *options, char *const args[], int *optind)
 {
+	if (args[*optind + 1] == NULL)
+		return (retmsg("ft_nmap: error: missing argument near %s\n", "--speedup", -1));
 	options->threads = ft_atoi(args[*optind + 1]);
 	(*optind)++;
 	return (0);
 }
 
-static inline int	append_scantype(t_opt *options, char *type)
+static int	append_scantype(t_opt *options, char *type)
 {
 	const char	*typelist[7] = {"SYN", "NULL", "ACK", "FIN", "XMAS", "UDP", 0};
 
@@ -141,8 +153,10 @@ int		read_scantypes(t_opt *options, char *const args[], int *optind)
 	char	**flags;
 	int		ret = 0;
 
+	if (args[*optind + 1] == NULL)
+		return (retmsg("ft_nmap: error: missing argument near %s\n", "--scan", -1));
 	if ((flags = ft_strsplit(args[*optind + 1], '/')) == NULL)
-		return (-1);
+		return (retmsg("ft_nmap: error with scantype: %s\n", args[*optind + 1], -1));
 	for (size_t i = 0; i < ft_tablen(flags); i++)
 	{
 		ret = append_scantype(options, flags[i]);
@@ -268,6 +282,7 @@ int     nmap_optloop(t_opt *options, int nargs, char *const args[])
     }
 	if (set_defaults(options))
 		return (-1);
-	print_summary(options);
-	return (0);
+	if (ret != -1)
+		print_summary(options);
+	return (ret);
 }

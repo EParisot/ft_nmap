@@ -43,7 +43,7 @@ int		main(int ac, char **av)
 		ret = (-1);
 	}
 	if (ret == 0)
-		ret = nmap_optloop(opt, ac, av);
+		ret = nmap_optloop(opt, ac, av); // will return -1 if bad argument for option
 	clean_env(opt);
 	return (ret);
 }
