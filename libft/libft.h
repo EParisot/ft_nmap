@@ -17,12 +17,16 @@
 # include <string.h>
 # include <stdint.h>
 
+# define BUFF_SIZE 128
+
 typedef struct		s_list
 {
 	void			*content;
 	size_t			content_size;
 	struct s_list	*next;
 }					t_list;
+
+int					get_next_line(const int fd, char **line);
 
 void				*ft_memset(void *s, int c, size_t n);
 void				ft_bzero(void *s, size_t n);

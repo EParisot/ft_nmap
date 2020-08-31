@@ -3,85 +3,105 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: sdincbud <sdincbud@student.42.fr>          +#+  +:+       +#+        */
+/*   By: eparisot <eparisot@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2018/11/16 17:17:04 by maabou-h          #+#    #+#             */
-/*   Updated: 2019/06/24 10:07:29 by sdincbud         ###   ########.fr       */
+/*   Created: 2017/11/07 10:57:48 by eparisot          #+#    #+#             */
+/*   Updated: 2018/04/30 17:01:26 by eparisot         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <unistd.h>
-#include <stdlib.h>
 #include "libft.h"
+#include <stdlib.h>
+#include <unistd.h>
 
-#define BUFF_SIZE 64
-
-static char	*ft_join(char *s1, char *s2, size_t n)
+static int	ft_realloc(char **line, size_t size)
 {
+	size_t	len;
 	char	*new;
-	size_t	i;
-	size_t	pos;
-	int		len;
 
-	len = ft_strlen(s1) + n + 1;
-	if (len == 1 || !(new = (char*)malloc((sizeof(char) * len))))
-		return (NULL);
-	i = 0;
-	pos = 0;
-	while (s1[i] != '\0')
-		new[pos++] = s1[i++];
-	i = 0;
-	while (n-- && s2[i] != '\0')
-		new[pos++] = s2[i++];
-	new[pos] = '\0';
-	return (new);
+	len = 0;
+	if (*line)
+		len = ft_strlen(*line);
+	if (!(new = (char*)malloc(len + 1)))
+		return (0);
+	ft_memmove(new, *line, len);
+	free(*line);
+	if (!(*line = (char *)malloc((len + size) * sizeof(char))))
+		return (0);
+	ft_memmove(*line, new, len);
+	free(new);
+	return (1);
 }
 
-static int	ft_buf(char **line, char **buf)
+static int	ft_return(long readen, int i, char **line)
 {
-	char	*tmp;
-
-	tmp = *line;
-	*line = ft_join(*line, *buf, (ft_strlen(*buf) -
-				ft_strlen((ft_strchr(*buf, '\n')))));
-	free(tmp);
-	tmp = *buf;
-	*buf = ft_strdup(ft_strchr(*buf, '\n'));
-	free(tmp);
-	if (*buf)
+	if (readen == -1)
 	{
-		tmp = *buf;
-		*buf = ft_strdup(*buf + 1);
-		free(tmp);
+		free(*line);
+		*line = NULL;
+		return (-1);
+	}
+	if (readen == 0 && i != 0)
+	{
+		(*line)[i] = '\0';
 		return (1);
 	}
+	free(*line);
+	*line = NULL;
 	return (0);
+}
+
+static int	ft_read_line(char **line, char *rest, int i, int fd)
+{
+	char		buff[BUFF_SIZE + 1];
+	int			j;
+	long		readen;
+
+	j = 0;
+	readen = 0;
+	while ((readen = read(fd, &buff, BUFF_SIZE)) > 0)
+	{
+		buff[readen] = '\0';
+		while (buff[j] && buff[j] != '\n')
+			(*line)[i++] = buff[j++];
+		if (buff[j] == '\n')
+		{
+			(*line)[i] = '\0';
+			ft_strcpy(rest, buff + j + 1);
+			return (1);
+		}
+		j = 0;
+		if (!ft_realloc(line, BUFF_SIZE))
+			return (-1);
+		ft_bzero(buff, BUFF_SIZE + 1);
+	}
+	return (ft_return(readen, i, line));
 }
 
 int			get_next_line(const int fd, char **line)
 {
-	static char	*buf = NULL;
-	int			ret;
+	int				i;
+	static char		rest[12288][BUFF_SIZE];
 
-	if (fd < 0 || !line || fd > 4894 || !(*line = ft_strnew(0)))
+	i = 0;
+	if (BUFF_SIZE > 8000000 || !line || !(*line = ft_memalloc(BUFF_SIZE)) \
+	|| fd < 0 || fd > 12287)
 		return (-1);
-	ret = 1;
-	while (ret != -1)
+	if (*rest[fd])
 	{
-		if (buf == NULL)
+		while (rest[fd][i] && rest[fd][i] != '\n')
 		{
-			buf = ft_strnew(BUFF_SIZE);
-			if ((ret = read(fd, buf, BUFF_SIZE)) == -1)
-				return (-1);
+			(*line)[i] = rest[fd][i];
+			i++;
 		}
-		if (ft_buf(line, &buf))
-			return (1);
-		if (ret == 0)
+		if (rest[fd][i] == '\n')
 		{
-			if (!*line[0])
-				return (0);
+			ft_memmove(rest[fd], rest[fd] + i + 1, BUFF_SIZE);
 			return (1);
 		}
+		ft_bzero(rest[fd], BUFF_SIZE);
 	}
-	return (-1);
+	if (!*rest[fd])
+		return (ft_read_line(line, rest[fd], i, fd));
+	return (1);
 }
