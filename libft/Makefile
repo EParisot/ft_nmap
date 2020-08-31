@@ -85,6 +85,7 @@ SRCS	=	ft_atoi.c \
 			ft_strswap.c \
 			ft_swap_32.c \
 			ft_swap_64.c \
+			get_next_line.c
 
 OBJS	=	$(SRCS:.c=.o)
 

@@ -104,4 +104,6 @@ size_t				ft_tablen(char **tab);
 uint32_t			ft_swap_32(uint32_t n);
 uint64_t			ft_swap_64(uint64_t n);
 
+int					get_next_line(const int fd, char **line);
+
 #endif

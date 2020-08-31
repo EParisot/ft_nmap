@@ -66,18 +66,51 @@ static int	read_ports(t_opt *options, char *const args[], int *optind)
 	return (ret);
 }
 
+static inline int	append_ip(t_opt *options, char *const ip)
+{
+	t_list				*new_lst;
+	struct sockaddr_in	sa;
+	
+	if (inet_addr(ip) == INADDR_NONE)
+		return (-1);
+	inet_pton(AF_INET, ip, &sa.sin_addr);
+	if ((new_lst = ft_lstnew(&sa, sizeof(sa))) == NULL)
+		return (-1);
+	if (options->ips)
+		ft_lstaddend(&options->ips, new_lst);
+	else
+		options->ips = new_lst;
+	return (0);
+}
+
 int		fread_ipaddr(t_opt *options, char *const args[], int *optind)	//TODO
 {
-	(void)options;
-	printf("Debug ip file : %s\n", args[*optind + 1]);
+	FILE				*fp;
+	char				*ipbuf;
+	int					fd;
+
+	if ((fp = fopen(args[*optind + 1], "r")) == NULL)
+		return (-1);
+	fd = fileno(fp);
+	while (get_next_line(fd, &ipbuf) > 0)
+	{
+		if (!ipbuf || !ipbuf[0])
+			break ;
+		if (append_ip(options, ipbuf) == -1)
+			return (-1);
+		free(ipbuf);
+	}
+	fclose(fp);
 	(*optind)++;
 	return (0);
 }
 
 int		read_ipaddr(t_opt *options, char *const args[], int *optind)	//TODO
 {
-	(void)options;
-	printf("Debug ip : %s\n", args[*optind + 1]);
+	if (args[*optind + 1] == NULL)
+		return (-1);
+	if (append_ip(options, args[*optind + 1]) == -1)
+		return (-1);
 	(*optind)++;
 	return (0);
 }
@@ -85,15 +118,40 @@ int		read_ipaddr(t_opt *options, char *const args[], int *optind)	//TODO
 int		read_speedup(t_opt *options, char *const args[], int *optind)
 {
 	options->threads = ft_atoi(args[*optind + 1]);
-	printf("Debug speedup : %s\n", args[*optind + 1]);
 	(*optind)++;
 	return (0);
 }
 
-int		read_scantypes(t_opt *options, char *const args[], int *optind)	//TODO
+static inline int	append_scantype(t_opt *options, char *type)
 {
-	(void)options;
-	printf("Debug scantypes : %s\n", args[*optind + 1]);
+	const char	*typelist[7] = {"SYN", "NULL", "ACK", "FIN", "XMAS", "UDP", 0};
+
+	if (!type || type[0] == '\0')
+		return (1);
+	for (size_t i = 0; i < 6; i++)
+	{
+		if (!ft_strcmp(typelist[i], type))
+			options->scanflag += (1 << (i + 1));
+	}
+	return (0);
+}
+
+int		read_scantypes(t_opt *options, char *const args[], int *optind)
+{
+	char	**flags;
+	int		ret = 0;
+
+	if ((flags = ft_strsplit(args[*optind + 1], '/')) == NULL)
+		return (-1);
+	for (size_t i = 0; i < ft_tablen(flags); i++)
+	{
+		ret = append_scantype(options, flags[i]);
+		if (ret)
+			break;
+	}
+	for (size_t i = 0; flags[i]; i++)
+		free(flags[i]);
+	free(flags);
 	(*optind)++;
 	return (0);
 }
@@ -142,7 +200,7 @@ static int		set_defaults(t_opt *options)
 		if (append_range(options, dft_ports))
 			return (-1);
 	if (options->scanflag == 0)
-		options->scanflag = 0xff;
+		options->scanflag = 0x1; // 1 when all flags active
 	return (0);
 }
 
@@ -150,12 +208,12 @@ static void		print_summary(t_opt *options)
 {
 	t_list		*tmp_ports = options->ports;
 	t_list		*tmp_ips = options->ips;
-	char		*flagstr[6] = {"SYN", "NULL", "ACK", "FIN", "XMAS", "UDP"};
+	char		*flagstr[7] = {"SYN", "NULL", "ACK", "FIN", "XMAS", "UDP", 0};
 	
 	printf("IP(s) :");
 	while (tmp_ips)
 	{
-		printf(" %s", "TODO");
+		printf(" %s", inet_ntoa(((struct sockaddr_in*)tmp_ips->content)->sin_addr));
 		tmp_ips = tmp_ips->next;
 		(tmp_ips) ? printf(",") : printf("\n");
 	}
@@ -170,7 +228,7 @@ static void		print_summary(t_opt *options)
 	printf("Packets types :");
 	for (int i = 0; i < 6; i++)
 	{
-		((options->scanflag >> i) & 1) ? printf(" %s", flagstr[i]) : 0;
+		((options->scanflag >> (i + 1)) & 1) ? printf(" %s", flagstr[i]) : 0;
 		(i < 5) ? printf(",") : printf("\n");
 	}
 }

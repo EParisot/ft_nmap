@@ -14,9 +14,12 @@
 
 # define FT_NMAP_H
 
+# define _POSIX_C_SOURCE 1 // for fileno()
+
 # include "../libft/libft.h"
 # include <stdlib.h>
 # include <stdio.h>
+# include <arpa/inet.h> // for inet_pton()
 
 typedef struct  s_opt
 {

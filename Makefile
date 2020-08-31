@@ -21,7 +21,7 @@ OBJS	=	$(SRCS:.c=.o)
 
 LIBS	=	libft/libft.a \
 
-CFLAGS	=	-Wall -Wextra -Werror -g3
+CFLAGS	=	-Wall -Wextra -Werror -g3 --std=c99
 
 RM		=	rm -f
 
