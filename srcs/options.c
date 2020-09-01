@@ -25,23 +25,60 @@ int	    	bad_usage(const char *arg, int context)
 	return (-1);
 }
 
+static void	remove_doublons(t_list *ports)
+{
+	t_list	*tmp_lst = ports;
+	t_list	*last_port = NULL;
+	int		last_val = 0;
+
+	while (tmp_lst)
+	{
+		if (*(int *)tmp_lst->content > last_val)
+		{
+			last_val = *(int *)tmp_lst->content;
+			last_port = tmp_lst;
+			tmp_lst = tmp_lst->next;
+		}
+		else
+		{
+			last_port->next = tmp_lst->next;
+			ft_lstdelone(&tmp_lst, del);
+			tmp_lst = last_port->next;
+		}
+	}
+}
+
 static int	append_range(t_opt *options, char **dash_tab)
 {
-	t_list	*new_lst;
+	t_list	*new_ranges_lst;
+	t_list	*new_ports_lst;
 	t_range	range;
-
 
 	range.start = ft_atoi(dash_tab[0]);
 	if (ft_tablen(dash_tab) > 1)
 		range.end = ft_atoi(dash_tab[1]);
 	else
 		range.end = range.start;
-	if ((new_lst = ft_lstnew(&range, sizeof(range))) == NULL)
-		return (-1);
-	if (options->ports)
-		ft_lstaddend(&options->ports, new_lst);
-	else
-		options->ports = new_lst;
+	if (range.start > 0 && range.start <= 65535 && \
+		range.end > 0 && range.end <= 65535 && \
+		range.end >= range.start)
+	{
+		for (int i = range.start; i <= range.end; i++)
+		{
+			if ((new_ports_lst = ft_lstnew(&i, sizeof(int))) == NULL)
+				return (-1);
+			if (options->ports)
+				ft_lstaddend(&options->ports, new_ports_lst);
+			else
+				options->ports = new_ports_lst;
+		}
+		if ((new_ranges_lst = ft_lstnew(&range, sizeof(range))) == NULL)
+			return (-1);
+		if (options->ranges)
+			ft_lstaddend(&options->ranges, new_ranges_lst);
+		else
+			options->ranges = new_ranges_lst;
+	}
 	return (0);
 }
 
@@ -49,9 +86,8 @@ static int	read_ports(t_opt *options, char *const args[], int *optind)
 {
 	char	**comas_tab;
 	char	**dash_tab;
-	int		ret;
+	int		ret = 0;
 
-	ret = 0;
 	if (args[*optind + 1] == NULL)
 		return (retmsg("ft_nmap: error: missing argument near %s\n", "--port", -1));
 	if ((comas_tab = ft_strsplit(args[*optind + 1], ',')) == NULL)
@@ -221,6 +257,19 @@ static int		set_defaults(t_opt *options)
 	if (options->ports == NULL)
 		if (append_range(options, dft_ports))
 			return (-1);
+	ft_lstsort(options->ports);
+	remove_doublons(options->ports);
+
+
+	t_list	*tmp = options->ports;
+	while (tmp)
+	{
+		printf("%d ", *(int*)(tmp->content));
+		tmp = tmp->next;
+		(tmp) ? printf(",") : printf("\n");
+	}
+
+
 	if (options->scanflag == 0)
 		options->scanflag = 0xff; // 0xff when all flags active
 	return (0);
@@ -228,7 +277,7 @@ static int		set_defaults(t_opt *options)
 
 static void		print_summary(t_opt *options)
 {
-	t_list		*tmp_ports = options->ports;
+	t_list		*tmp_ranges = options->ranges;
 	t_list		*tmp_ips = options->ips;
 	char		*flagstr[7] = {"SYN", "NULL", "ACK", "FIN", "XMAS", "UDP", 0};
 	
@@ -240,11 +289,14 @@ static void		print_summary(t_opt *options)
 		(tmp_ips) ? printf(",") : printf("\n");
 	}
 	printf("Ports : ");
-	while (tmp_ports)
+	while (tmp_ranges)
 	{
-		printf("%d-%d", ((t_range*)(tmp_ports->content))->start, ((t_range*)(tmp_ports->content))->end);
-		tmp_ports = tmp_ports->next;
-		(tmp_ports) ? printf(",") : printf("\n");
+		if (((t_range*)(tmp_ranges->content))->end > ((t_range*)(tmp_ranges->content))->start)
+			printf("%d-%d", ((t_range*)(tmp_ranges->content))->start, ((t_range*)(tmp_ranges->content))->end);
+		else
+			printf("%d", ((t_range*)(tmp_ranges->content))->start);
+		tmp_ranges = tmp_ranges->next;
+		(tmp_ranges) ? printf(",") : printf("\n");
 	}
 	printf("Threads : %d\n", options->threads);
 	printf("Packets types :");

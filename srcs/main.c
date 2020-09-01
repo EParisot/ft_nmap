@@ -20,6 +20,8 @@ void	del(void *addr, size_t size)
 
 void	clean_env(t_opt *opt)
 {
+	if (opt->ranges)
+		ft_lstdel(&opt->ranges, del);
 	if (opt->ports)
 		ft_lstdel(&opt->ports, del);
 	if (opt->ips)
@@ -35,6 +37,7 @@ int		main(int ac, char **av)
 	if ((opt = (t_opt *)malloc(sizeof(t_opt))) == NULL)
 		return (-1);
 	ft_bzero(opt, sizeof(opt));
+	opt->ranges = NULL;
 	opt->ports = NULL;
 	opt->ips = NULL;
 	if (ac <= 1)
