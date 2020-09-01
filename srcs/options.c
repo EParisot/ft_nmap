@@ -12,7 +12,7 @@ int	    	bad_usage(const char *arg, int context)
                         Usage: ft_nmap [--help] [--ports [NUMBER/RANGE]] --ip IPADDRESS [--speedup [NUMBER]] [--scan [TYPE]]\n\
                         \t\tft_nmap [--help] [--ports [NUMBER/RANGE]] --file FILENAME [--speedup [NUMBER]] [--scan [TYPE]]\n\
                         \t--help\tPrint this help screen\n\
-                        \t--ports\tports to scan (eg: 1-10 or 1,2,3 or 1,5-15)\n\
+                        \t--ports\tports to scan (eg: 1-10 or 1,2,3 or 1,5-15) (1-65535 max)\n\
                         \t--ip\t\tip addresses to scan in dot format\n\
                         \t--file\t\tFile name containing IP addresses to scan,\n\
                         \t--speedup\t[250 max] number of parallel threads to use\n\
@@ -259,6 +259,8 @@ static int		set_defaults(t_opt *options)
 			return (-1);
 	ft_lstsort(options->ports);
 	remove_doublons(options->ports);
+	if (options->threads == 0)
+		options->threads = 1;
 	if (options->scanflag == 0)
 		options->scanflag = 0xff; // 0xff when all flags active
 	return (0);
