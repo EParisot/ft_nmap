@@ -259,17 +259,6 @@ static int		set_defaults(t_opt *options)
 			return (-1);
 	ft_lstsort(options->ports);
 	remove_doublons(options->ports);
-
-
-	t_list	*tmp = options->ports;
-	while (tmp)
-	{
-		printf("%d ", *(int*)(tmp->content));
-		tmp = tmp->next;
-		(tmp) ? printf(",") : printf("\n");
-	}
-
-
 	if (options->scanflag == 0)
 		options->scanflag = 0xff; // 0xff when all flags active
 	return (0);
