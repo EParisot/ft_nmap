@@ -15,11 +15,22 @@
 # define FT_NMAP_H
 
 # define _POSIX_C_SOURCE 1 // for fileno()
+# define NPACKETS 1 // for pcap_loop()
 
 # include "../libft/libft.h"
 # include <stdlib.h>
 # include <stdio.h>
+# include <pcap.h> // for PCAP_ERRBUF_SIZE
+// also using -D_GNU_SOURCE for all types in pcap.h that were cancelled by the POSIC_C_SOURCE preproc
 # include <arpa/inet.h> // for inet_pton()
+# include <net/ethernet.h> // for ETHERTYPE macros
+
+typedef struct  s_device
+{
+    pcap_t      *handle;
+    char        *device;
+    char        errbuf[PCAP_ERRBUF_SIZE];
+}               t_device;
 
 typedef struct  s_opt
 {
@@ -28,6 +39,7 @@ typedef struct  s_opt
 	t_list		*ranges;	/* ranges option */
     t_list      *ports;     /* liste de ports */
     t_list      *ips;       /* nombre d'ip variable, une liste c'est bien */
+    t_device    *dev;
 }               t_opt;
 
 typedef struct	s_range
@@ -44,5 +56,7 @@ int    	bad_usage(const char *arg, int context);						/* Handle error on parsing
 
 char    nmap_getopt(int nargs, char *const args[], int *optind);		/* Detect option to be treated and how to parse next argument */
 int     nmap_optloop(t_opt *options, int nargs, char *const args[]);	/* Iterate through argv to parse arguments from command line */
+
+int		ft_nmap(t_opt *opt);
 
 #endif

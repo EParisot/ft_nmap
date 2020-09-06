@@ -14,6 +14,7 @@ NAME	=	ft_nmap
 
 SRCS	=	srcs/main.c \
 			srcs/options.c \
+			srcs/ft_nmap.c
 
 INC		=	includes/ft_nmap.h
 
@@ -21,14 +22,14 @@ OBJS	=	$(SRCS:.c=.o)
 
 LIBS	=	libft/libft.a \
 
-CFLAGS	=	-Wall -Wextra -Werror -g3 --std=c99
+CFLAGS	=	-Wall -Wextra -Werror -g3 --std=c99 -D_GNU_SOURCE
 
 RM		=	rm -f
 
 all		:	$(LIBS) $(NAME)
 
 $(NAME)	:	$(OBJS) $(INC)
-	gcc $(CFLAGS) $(OBJS) $(LIBS) -o $(NAME)
+	gcc $(CFLAGS) $(OBJS) $(LIBS) -o $(NAME) -lpcap
 
 $(LIBS)	:
 	@$(MAKE) -C libft
