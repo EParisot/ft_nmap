@@ -33,12 +33,16 @@ static t_device *init_ndevice()
 {
     // on chope l'interface, sur ma vm c'est enp0s3 par exemple
     t_device	*dev;
+	pcap_if_t	*alldevsp;
 
+	alldevsp = NULL;
     if ((dev = (t_device *)malloc(sizeof(t_device))) == NULL)
 		return (NULL);
 	ft_bzero(dev, sizeof(dev));
-	if ((dev->device = pcap_lookupdev(dev->errbuf)) == NULL)
+	if (pcap_findalldevs(&alldevsp, dev->errbuf))
 		return (NULL);
+	dev->device = ft_strdup(alldevsp->name);
+	pcap_freealldevs(alldevsp);
     return (dev);
 }
 
@@ -54,7 +58,7 @@ int		        ft_nmap(t_opt *opt)
     if (opt->dev == NULL)
         return (-1);
     opt->dev->handle = pcap_open_live(opt->dev->device, snapshot_len, promiscuous, timeout, opt->dev->errbuf);
-    pcap_loop(opt->dev->handle, NPACKETS, my_packet_handler, NULL);
+    pcap_dispatch(opt->dev->handle, NPACKETS, my_packet_handler, NULL);
     pcap_close(opt->dev->handle);
     return 0;
 }

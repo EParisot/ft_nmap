@@ -26,6 +26,12 @@ void	clean_env(t_opt *opt)
 		ft_lstdel(&opt->ports, del);
 	if (opt->ips)
 		ft_lstdel(&opt->ips, del);
+	if (opt->dev)
+	{
+		if (opt->dev->device)
+			free(opt->dev->device);	
+		free(opt->dev);
+	}
 	free(opt);
 }
 
@@ -48,8 +54,11 @@ int		main(int ac, char **av)
 	if (ret == 0)
 	{
 		ret = nmap_optloop(opt, ac, av); // will return -1 if bad argument for option
-    	ret = ft_nmap(opt);
-		printf("Device: %s\n", opt->dev->device);
+		if (ret == 0)
+		{
+	    	ret = ft_nmap(opt);
+			printf("Device: %s\n", opt->dev->device);
+		}
 	}
 	clean_env(opt);
 	return (ret);
