@@ -26,6 +26,8 @@ void	clean_env(t_opt *opt)
 		ft_lstdel(&opt->ports, del);
 	if (opt->ips)
 		ft_lstdel(&opt->ips, del);
+	if (opt->threads_arr)
+		free(opt->threads_arr);
 	if (opt->dev)
 	{
 		if (opt->dev->device)
@@ -46,6 +48,9 @@ int		main(int ac, char **av)
 	opt->ranges = NULL;
 	opt->ports = NULL;
 	opt->ips = NULL;
+	opt->threads_arr = NULL;
+	opt->threads = 0;
+	opt->scanflag = 0;
 	if (ac <= 1)
 	{
 		bad_usage(NULL, 0);

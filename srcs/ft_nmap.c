@@ -53,6 +53,10 @@ static t_device *init_ndevice()
 
 int		        ft_nmap(t_opt *opt)
 {
+	// threads creation
+	if ((opt->threads_arr = (pthread_t *)malloc(opt->threads * sizeof(pthread_t))) == NULL)
+		return (-1);
+
 	int snapshot_len = 1028;
 	int promiscuous = 0;
 	int timeout = 1000;
@@ -85,8 +89,8 @@ int		        ft_nmap(t_opt *opt)
         }
         printf("ft_nmap: entering pcap_loop\n");
         for (int i = 0; i < 10; i++)
-        { pcap_dispatch(opt->dev->handle, 1, my_packet_handler, NULL);}
-        //pcap_loop(opt->dev->handle, 10, my_packet_handler, NULL);
+        	pcap_dispatch(opt->dev->handle, 1, my_packet_handler, NULL);
+        	//pcap_loop(opt->dev->handle, 10, my_packet_handler, NULL);
         printf("ft_nmap: exiting pcap_loop\n");
         pcap_close(opt->dev->handle);
 	}
