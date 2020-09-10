@@ -25,12 +25,15 @@
 # include <arpa/inet.h> // for inet_pton()
 # include <net/ethernet.h> // for ETHERTYPE macros
 
-typedef struct  s_device
+typedef struct          s_device
 {
-    pcap_t      *handle;
-    char        *device;
-    char        errbuf[PCAP_ERRBUF_SIZE];
-}               t_device;
+    pcap_t              *handle;
+    char                *device;
+    char                errbuf[PCAP_ERRBUF_SIZE];
+    bpf_u_int32         subnet_mask;
+    bpf_u_int32         ip;
+    struct bpf_program  filter;
+}                       t_device;
 
 typedef struct  s_opt
 {
