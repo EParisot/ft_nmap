@@ -19,7 +19,12 @@ int	    	bad_usage(const char *arg, int context)
                         \t--scan\t\tSYN/NULL/FIN/XMAS/ACK/UDP";
 
     if (context)
-		fprintf(stderr, "argument error: %s, context %d\n", arg, context);
+	{
+		if (context > 0)
+			fprintf(stderr, "argument error: %s, context %d\n", arg, context);
+		else if (context == -1)
+			fprintf(stderr, "permission error\n");
+	}
 	else
 		printf("%s\n", usage);	
 	return (-1);
