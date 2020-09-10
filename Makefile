@@ -22,14 +22,14 @@ OBJS	=	$(SRCS:.c=.o)
 
 LIBS	=	libft/libft.a \
 
-CFLAGS	=	-Wall -Wextra -Werror -g3 --std=c99 -D_GNU_SOURCE
+CFLAGS	=	-Wall -Wextra -Werror -g3 --std=c99 -D_GNU_SOURCE -D_REENTRANT
 
 RM		=	rm -f
 
 all		:	$(LIBS) $(NAME)
 
 $(NAME)	:	$(OBJS) $(INC)
-	gcc $(CFLAGS) $(OBJS) $(LIBS) -o $(NAME) -lpcap
+	gcc $(CFLAGS) $(OBJS) $(LIBS) -o $(NAME) -lpcap -lpthread
 
 $(LIBS)	:
 	@$(MAKE) -C libft

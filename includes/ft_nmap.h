@@ -26,6 +26,7 @@
 # include <net/ethernet.h> // for ETHERTYPE macros
 # include <unistd.h> // for geteuid
 # include <sys/types.h> // for geteuid
+# include <pthread.h> 
 
 typedef struct  s_device
 {
