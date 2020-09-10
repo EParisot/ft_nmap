@@ -45,9 +45,6 @@ static t_device *init_ndevice()
 		return (NULL);
 	dev->device = ft_strdup(alldevsp->name);
 	pcap_freealldevs(alldevsp);
-    if ((dev->handle = (pcap_t *)malloc(sizeof(dev->handle))) == NULL)
-		return (NULL);
-	ft_bzero(dev->handle, sizeof(dev->handle));
     return (dev);
 }
 
@@ -93,6 +90,7 @@ int		        ft_nmap(t_opt *opt)
         	//pcap_loop(opt->dev->handle, 10, my_packet_handler, NULL);
         printf("ft_nmap: exiting pcap_loop\n");
         pcap_close(opt->dev->handle);
+		pcap_freecode(&(opt->dev->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
 	}
 	else
 	{

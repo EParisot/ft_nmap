@@ -31,7 +31,7 @@ void	clean_env(t_opt *opt)
 	if (opt->dev)
 	{
 		if (opt->dev->device)
-			free(opt->dev->device);	
+			free(opt->dev->device);
 		free(opt->dev);
 	}
 	free(opt);
@@ -49,6 +49,7 @@ int		main(int ac, char **av)
 	opt->ports = NULL;
 	opt->ips = NULL;
 	opt->threads_arr = NULL;
+	opt->dev = NULL;
 	opt->threads = 0;
 	opt->scanflag = 0;
 	if (ac <= 1)
