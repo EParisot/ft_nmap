@@ -48,17 +48,25 @@ static t_device *init_ndevice()
 
 int		        ft_nmap(t_opt *opt)
 {
-    // je teste le loop pcap ici, pour l'instant avec NPACKETS
-    // comme limite de paquets a ecouter
+	// je teste le loop pcap ici, pour l'instant avec NPACKETS
+	// comme limite de paquets a ecouter
 	int snapshot_len = 1028;
-    int promiscuous = 0;
-    int timeout = 1000;
+	int promiscuous = 0;
+	int timeout = 1000;
 
-    opt->dev = init_ndevice();
-    if (opt->dev == NULL)
-        return (-1);
-    opt->dev->handle = pcap_open_live(opt->dev->device, snapshot_len, promiscuous, timeout, opt->dev->errbuf);
-    pcap_dispatch(opt->dev->handle, NPACKETS, my_packet_handler, NULL);
-    pcap_close(opt->dev->handle);
-    return 0;
+	if ((opt->dev = init_ndevice()) == NULL)
+		return (-1);
+	if (getuid() == 0)
+	{
+		if ((opt->dev->handle = pcap_open_live(opt->dev->device, snapshot_len, promiscuous, timeout, opt->dev->errbuf)) == NULL)
+			return (-1);
+	}
+	else
+	{
+		bad_usage(NULL, -1);
+		return (-1);
+	}
+	pcap_dispatch(opt->dev->handle, NPACKETS, my_packet_handler, NULL);
+	pcap_close(opt->dev->handle);
+	return (0);
 }

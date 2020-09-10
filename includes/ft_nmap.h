@@ -24,6 +24,8 @@
 // also using -D_GNU_SOURCE for all types in pcap.h that were cancelled by the POSIC_C_SOURCE preproc
 # include <arpa/inet.h> // for inet_pton()
 # include <net/ethernet.h> // for ETHERTYPE macros
+# include <unistd.h> // for geteuid
+# include <sys/types.h> // for geteuid
 
 typedef struct  s_device
 {
