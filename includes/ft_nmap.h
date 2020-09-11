@@ -64,6 +64,8 @@ int    	bad_usage(const char *arg, int context);						/* Handle error on parsing
 char    nmap_getopt(int nargs, char *const args[], int *optind);		/* Detect option to be treated and how to parse next argument */
 int     nmap_optloop(t_opt *options, int nargs, char *const args[]);	/* Iterate through argv to parse arguments from command line */
 
+int		send_probe(struct sockaddr_in *addr, int port, uint8_t scan);
+
 int		nmap_wrapper(t_opt *opt);
 
 #endif

@@ -75,16 +75,40 @@ static inline int   nmap_pcapsetup(t_opt *opt, char* const filter)
     return (1);
 }
 
-int		        nmap_wrapper(t_opt *opt)
+static int		nmap_sender(t_opt *opt)
 {
 	// threads creation
 	if ((opt->threads_arr = (pthread_t *)malloc(opt->threads * sizeof(pthread_t))) == NULL)
 		return (-1);
+	// test simple loop
+	t_list				*tmp_ips = opt->ips;
+	t_list				*tmp_port = opt->ports;
+	while (tmp_ips)
+	{
+		while (tmp_port)
+		{
+			for (int scan = 1; scan <= 32; scan *= 2)
+				if (scan & opt->scanflag)
+					send_probe((struct sockaddr_in *)(tmp_ips->content), *(int *)(tmp_port->content), scan);
+			tmp_port = tmp_port->next;
+		}
+		tmp_port = opt->ports;
+		tmp_ips = tmp_ips->next;
+	}
+	return (0);
+}
+
+int		        nmap_wrapper(t_opt *opt)
+{
+	// test
+	if (nmap_sender(opt))
+		return (-1);
+	
 	if ((opt->dev = init_ndevice()) == NULL)
 		return (-1);
 	if (getuid() == 0)
 	{
-		if (nmap_pcapsetup(opt, "dst 45.33.32.156") == -1)
+		if (nmap_pcapsetup(opt, "src host 45.33.32.156 and port 9999") == -1)
             return (-1);
         printf("ft_nmap: entering pcap_loop\n");
         for (int i = 0; i < 10; i++)

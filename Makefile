@@ -14,7 +14,8 @@ NAME	=	ft_nmap
 
 SRCS	=	srcs/main.c \
 			srcs/options.c \
-			srcs/ft_nmap.c
+			srcs/ft_nmap.c \
+			srcs/packets_forge.c \
 
 INC		=	includes/ft_nmap.h
 
