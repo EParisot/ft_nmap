@@ -62,7 +62,7 @@ int		main(int ac, char **av)
 		ret = nmap_optloop(opt, ac, av); // will return -1 if bad argument for option
 		if (ret == 0)
 		{
-	    	ret = ft_nmap(opt);
+	    	ret = nmap_wrapper(opt);
 			printf("Device: %s\n", opt->dev->device);
 		}
 	}

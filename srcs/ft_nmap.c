@@ -19,7 +19,7 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 	(void)args;
     (void)header;
     struct ether_header *eth_header;
-
+    printf("ft_nmap: entering callback fct\n");
     eth_header = (struct ether_header*)packet;
     if (ntohs(eth_header->ether_type) == ETHERTYPE_IP)
         printf("IP\n");
@@ -48,46 +48,49 @@ static t_device *init_ndevice()
     return (dev);
 }
 
-int		        ft_nmap(t_opt *opt)
+static inline int   nmap_pcapsetup(t_opt *opt, char* const filter)
+{
+    if (pcap_lookupnet(opt->dev->device, &(opt->dev->ip), &(opt->dev->subnet_mask), opt->dev->errbuf) == -1)
+    {
+        printf("ft_nmap: Could not get information for device: %s\n", opt->dev->device);
+        opt->dev->ip = 0;
+        opt->dev->subnet_mask = 0;
+    }
+    opt->dev->handle = pcap_open_live(opt->dev->device, 1028, 0, 1000, opt->dev->errbuf);
+    if (opt->dev->handle == NULL)
+    {
+        fprintf(stderr, "ft_nmap: Cannot open interface %s", opt->dev->device);
+        return (-1);
+    }
+    if (pcap_compile(opt->dev->handle, &(opt->dev->filter), filter, 0, opt->dev->ip) == -1)
+    {
+        printf("ft_nmap: Bad filter - %s\n", pcap_geterr(opt->dev->handle));
+        return (-1);
+    }
+    if (pcap_setfilter(opt->dev->handle, &(opt->dev->filter)) == -1)
+    {
+        printf("ft_nmap: Error setting filter - %s\n", pcap_geterr(opt->dev->handle));
+        return (-1);
+    }
+    return (1);
+}
+
+int		        nmap_wrapper(t_opt *opt)
 {
 	// threads creation
 	if ((opt->threads_arr = (pthread_t *)malloc(opt->threads * sizeof(pthread_t))) == NULL)
 		return (-1);
-
-	int snapshot_len = 1028;
-	int promiscuous = 0;
-	int timeout = 1000;
-
 	if ((opt->dev = init_ndevice()) == NULL)
 		return (-1);
 	if (getuid() == 0)
 	{
-		if (pcap_lookupnet(opt->dev->device, &(opt->dev->ip), &(opt->dev->subnet_mask), opt->dev->errbuf) == -1)
-        {
-            printf("ft_nmap: Could not get information for device: %s\n", opt->dev->device);
-            opt->dev->ip = 0;
-            opt->dev->subnet_mask = 0;
-        }
-        opt->dev->handle = pcap_open_live(opt->dev->device, snapshot_len, promiscuous, timeout, opt->dev->errbuf);
-        if (opt->dev->handle == NULL)
-        {
-            fprintf(stderr, "ft_nmap: Cannot open interface %s", opt->dev->device);
+		if (nmap_pcapsetup(opt, "dst 45.33.32.156") == -1)
             return (-1);
-        }
-        if (pcap_compile(opt->dev->handle, &(opt->dev->filter), "host 45.33.32.156", 0, opt->dev->ip) == -1)
-        {
-            printf("ft_nmap: Bad filter - %s\n", pcap_geterr(opt->dev->handle));
-            return -1;
-        }
-        if (pcap_setfilter(opt->dev->handle, &(opt->dev->filter)) == -1)
-        {
-            printf("ft_nmap: Error setting filter - %s\n", pcap_geterr(opt->dev->handle));
-            return -1;
-        }
         printf("ft_nmap: entering pcap_loop\n");
         for (int i = 0; i < 10; i++)
+        {
         	pcap_dispatch(opt->dev->handle, 1, my_packet_handler, NULL);
-        	//pcap_loop(opt->dev->handle, 10, my_packet_handler, NULL);
+        }
         printf("ft_nmap: exiting pcap_loop\n");
         pcap_close(opt->dev->handle);
 		pcap_freecode(&(opt->dev->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
