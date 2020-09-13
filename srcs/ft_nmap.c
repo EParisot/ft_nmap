@@ -75,49 +75,134 @@ static inline int   nmap_pcapsetup(t_opt *opt, char* const filter)
     return (1);
 }
 
-static int		nmap_sender(t_opt *opt)
+static int	wait_response(t_opt *opt, struct sockaddr_in *addr, int port)
 {
-	// threads creation
-	if ((opt->threads_arr = (pthread_t *)malloc(opt->threads * sizeof(pthread_t))) == NULL)
+	char	str_addr[INET_ADDRSTRLEN];
+	char	*str_port;
+	char	*str_filter;
+
+	ft_bzero(str_addr, INET_ADDRSTRLEN);
+	if ((str_filter = (char *)malloc(20 + INET_ADDRSTRLEN + 6)) == NULL)
 		return (-1);
-	// test simple loop
-	t_list				*tmp_ips = opt->ips;
-	t_list				*tmp_port = opt->ports;
-	while (tmp_ips)
-	{
-		while (tmp_port)
-		{
-			for (int scan = 1; scan <= 32; scan *= 2)
-				if (scan & opt->scanflag)
-					send_probe((struct sockaddr_in *)(tmp_ips->content), *(int *)(tmp_port->content), scan);
-			tmp_port = tmp_port->next;
-		}
-		tmp_port = opt->ports;
-		tmp_ips = tmp_ips->next;
-	}
+	ft_bzero(str_filter, 20 + INET_ADDRSTRLEN + 6);
+	ft_strcat(str_filter, "src host ");
+	inet_ntop(AF_INET, &addr->sin_addr, str_addr, INET_ADDRSTRLEN);
+	ft_strcat(str_filter, str_addr);
+	str_port = ft_itoa(port);
+	ft_strcat(str_filter, " and port ");
+	ft_strcat(str_filter, str_port);
+	printf("listening %s\n", str_filter);
+	if (nmap_pcapsetup(opt, str_filter) == -1)
+		return (-1);
+	pcap_dispatch(opt->dev->handle, 1, my_packet_handler, NULL);
+	free(str_port);
+	free(str_filter);
 	return (0);
 }
 
-int		        nmap_wrapper(t_opt *opt)
+void	*probe(void *vargs)
 {
-	// test
-	if (nmap_sender(opt))
+	t_thread_arg *args = (t_thread_arg *)vargs;
+	*args->opt->sockets[args->sock_id]->available = 0;
+	send_probe(args->ip, args->port, args->scan);
+	if (wait_response(args->opt, args->ip, args->port))
+		return (NULL);
+	*args->opt->sockets[args->sock_id]->available = 1;
+	pcap_close(args->opt->dev->handle);
+	pcap_freecode(&(args->opt->dev->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
+	free(args);
+	return (NULL);
+}
+
+static int	nmap_sender(t_opt *opt)
+{
+	t_list	*tmp_ips = opt->ips;
+	t_list	*tmp_port = opt->ports;
+	int 	sock_id = 0;
+
+	// creates sockets
+	if ((opt->sockets = (t_socket **)malloc(opt->threads * sizeof(t_socket*))) == NULL)
 		return (-1);
-	
+
+	// nmap loop
+	for (int scan = 1; scan <= 32; scan *= 2)
+	{
+		if (scan & opt->scanflag)
+		{
+			// open sockets
+			for (int i = 0; i < opt->threads; i++)
+			{
+				if ((opt->sockets[i] = (t_socket *)malloc(sizeof(t_socket))) == NULL)
+					return (-1);
+				if ((opt->sockets[i]->sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0)
+				{
+					fprintf(stderr, "Error: Socket file descriptor not received\n");
+					return (-1);
+				}
+				if ((opt->sockets[i]->available = (int *)malloc(sizeof(int))) == NULL)
+					return (-1);
+				*opt->sockets[i]->available = 1;
+				if ((opt->sockets[i]->thread = (pthread_t *)malloc(sizeof(pthread_t))) == NULL)
+					return (-1);
+			}
+			// loop over ip / ports
+			while (tmp_ips)
+			{
+				while (tmp_port)
+				{
+					while (1)
+					{
+						if (*opt->sockets[sock_id]->available == 1)
+						{
+							/*printf("start_thread\n");*/
+							t_thread_arg *args;
+
+							if ((args = (t_thread_arg *)malloc(sizeof(t_thread_arg))) == NULL)
+								return (-1);
+							args->opt = opt;
+							args->sock_id = sock_id;
+							args->ip = (struct sockaddr_in *)(tmp_ips->content);
+							args->port = *(int *)(tmp_port->content);
+							args->scan = scan;
+							/*if (pthread_create(opt->sockets[sock_id]->thread, NULL, probe, (void *)args))
+								return (-1);*/
+							probe(args);
+							break;
+						}
+						if (sock_id == opt->threads - 1)
+							sock_id = 0;
+						else
+							sock_id++;
+					}
+					tmp_port = tmp_port->next;
+				}
+				tmp_port = opt->ports;
+				tmp_ips = tmp_ips->next;
+			}
+			// clean sockets
+			for (int i = 0; i < opt->threads; i++)
+			{
+				//pthread_join(*opt->sockets[i]->thread, NULL);
+				free(opt->sockets[i]->thread);
+				free(opt->sockets[i]->available);
+				close(opt->sockets[i]->sock_fd);
+				free(opt->sockets[i]);
+			}
+		}
+	}
+	free(opt->sockets);
+	return (0);
+}
+
+int		nmap_wrapper(t_opt *opt)
+{	
 	if ((opt->dev = init_ndevice()) == NULL)
 		return (-1);
 	if (getuid() == 0)
 	{
-		if (nmap_pcapsetup(opt, "src host 45.33.32.156 and port 9999") == -1)
-            return (-1);
-        printf("ft_nmap: entering pcap_loop\n");
-        for (int i = 0; i < 10; i++)
-        {
-        	pcap_dispatch(opt->dev->handle, 1, my_packet_handler, NULL);
-        }
-        printf("ft_nmap: exiting pcap_loop\n");
-        pcap_close(opt->dev->handle);
-		pcap_freecode(&(opt->dev->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
+		// send probes
+		if (nmap_sender(opt))
+			return (-1);
 	}
 	else
 	{

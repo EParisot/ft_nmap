@@ -38,15 +38,22 @@ typedef struct          s_device
     struct bpf_program  filter;
 }                       t_device;
 
+typedef struct	s_socket
+{
+	int			sock_fd;
+	int			*available;
+	pthread_t	*thread;
+}				t_socket;
+
 typedef struct  s_opt
 {
-	pthread_t	*threads_arr;
     uint8_t     threads;    /* 250 threads rentrent large dans un uint8_t */
     uint8_t     scanflag;   /* 8 bits suffisent pour caler tous les flags possibles en binaire */ 
 	t_list		*ranges;	/* ranges option */
     t_list      *ports;     /* liste de ports */
     t_list      *ips;       /* nombre d'ip variable, une liste c'est bien */
     t_device    *dev;
+	t_socket	**sockets;
 }               t_opt;
 
 typedef struct	s_range
@@ -55,6 +62,14 @@ typedef struct	s_range
 	int			end;
 }				t_range;
 
+typedef struct	s_thread_arg
+{
+	t_opt				*opt;
+	int					sock_id;
+	struct sockaddr_in	*ip;
+	int					port;
+	uint8_t				scan;
+}				t_thread_arg;
 
 void	clean_env(t_opt *opt);
 void	del(void *addr, size_t size);

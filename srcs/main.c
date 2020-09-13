@@ -26,8 +26,8 @@ void	clean_env(t_opt *opt)
 		ft_lstdel(&opt->ports, del);
 	if (opt->ips)
 		ft_lstdel(&opt->ips, del);
-	if (opt->threads_arr)
-		free(opt->threads_arr);
+	//if (opt->sockets)
+	//	free(opt->sockets);
 	if (opt->dev)
 	{
 		if (opt->dev->device)
@@ -48,7 +48,7 @@ int		main(int ac, char **av)
 	opt->ranges = NULL;
 	opt->ports = NULL;
 	opt->ips = NULL;
-	opt->threads_arr = NULL;
+	opt->sockets = NULL;
 	opt->dev = NULL;
 	opt->threads = 0;
 	opt->scanflag = 0;
@@ -63,7 +63,7 @@ int		main(int ac, char **av)
 		if (ret == 0)
 		{
 	    	ret = nmap_wrapper(opt);
-			printf("Device: %s\n", opt->dev->device);
+			//printf("Device: %s\n", opt->dev->device);
 		}
 	}
 	clean_env(opt);
