@@ -61,6 +61,5 @@ int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, in
             printf("not syn, ALL SCANS\n");
             break ;
     }
-    close(sock);
     return (0);
 }

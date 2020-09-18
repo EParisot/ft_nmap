@@ -26,8 +26,8 @@ void	clean_env(t_opt *opt)
 		ft_lstdel(&opt->ports, del);
 	if (opt->ips)
 		ft_lstdel(&opt->ips, del);
-	//if (opt->sockets)
-	//	free(opt->sockets);
+	if (opt->localhost)
+		free(opt->localhost);
 	if (opt->dev)
 	{
 		if (opt->dev->device)

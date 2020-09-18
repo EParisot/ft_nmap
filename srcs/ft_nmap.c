@@ -239,9 +239,9 @@ static int	nmap_sender(t_opt *opt)
 							args->ip = (struct sockaddr_in *)(tmp_ips->content);
 							args->port = *(int *)(tmp_port->content);
 							args->scan = scan & opt->scanflag;
-							if (pthread_create(opt->sockets[sock_id]->thread, NULL, probe, (void *)args))
-								return (-1);
-							//probe(args);
+							//if (pthread_create(opt->sockets[sock_id]->thread, NULL, probe, (void *)args))
+							//	return (-1);
+							probe(args);
 							break;
 						}
 						if (sock_id == opt->threads - 1)
@@ -257,7 +257,9 @@ static int	nmap_sender(t_opt *opt)
 			// clean sockets
 			for (int i = 0; i < opt->threads; i++)
 			{
-				pthread_join(*opt->sockets[i]->thread, NULL);
+				while (!opt->sockets[i]->available)
+					;
+				//pthread_join(*opt->sockets[i]->thread, NULL);
 				free(opt->sockets[i]->thread);
 				free(opt->sockets[i]->available);
 				close(opt->sockets[i]->sock_fd);
@@ -275,6 +277,7 @@ int		nmap_wrapper(t_opt *opt)
 		return (-1);
 	if (getuid() == 0)
 	{
+		opt->localhost = getlocalhost(opt);
 		// send probes
 		if (nmap_sender(opt))
 			return (-1);

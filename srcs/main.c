@@ -20,6 +20,7 @@ int		main(int ac, char **av)
 	if ((opt = (t_opt *)malloc(sizeof(t_opt))) == NULL)
 		return (-1);
 	ft_bzero(opt, sizeof(opt));
+	opt->localhost = NULL;
 	opt->ranges = NULL;
 	opt->ports = NULL;
 	opt->ips = NULL;

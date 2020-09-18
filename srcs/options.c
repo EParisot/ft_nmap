@@ -40,9 +40,14 @@ static int	append_range(t_opt *options, char **dash_tab)
 		range.end = ft_atoi(dash_tab[1]);
 	else
 		range.end = range.start;
+	if (range.end < range.start)
+	{
+		int tmp = range.start;
+		range.start = range.end;
+		range.end = tmp;
+	}
 	if (range.start > 0 && range.start <= 65535 && \
-		range.end > 0 && range.end <= 65535 && \
-		range.end >= range.start)
+		range.end > 0 && range.end <= 65535)
 	{
 		for (int i = range.start; i <= range.end; i++)
 		{
@@ -82,7 +87,10 @@ static int	read_ports(t_opt *options, char *const args[], int *optind)
 			free(dash_tab[j]);
 		free(dash_tab);
 		if (ret)
+		{
+			retmsg("ft_nmap: error parsing port argument: %s\n", args[*optind + 1], -1);
 			break ;
+		}
 	}
 	(*optind)++;
 	for (size_t i = 0; comas_tab[i]; i++)
