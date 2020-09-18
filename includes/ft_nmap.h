@@ -26,7 +26,12 @@
 # include <net/ethernet.h> // for ETHERTYPE macros
 # include <unistd.h> // for geteuid
 # include <sys/types.h> // for geteuid
-# include <pthread.h> 
+# include <pthread.h> // for threads
+# include <ifaddrs.h> // for getifaddr and ifaddr structcs
+# include <netinet/ip.h> // for iphdr struct
+# include <netinet/tcp.h> // for tcphdr struct
+# include<string.h>
+# include<sys/socket.h>
 
 typedef struct          s_device
 {
@@ -71,16 +76,33 @@ typedef struct	s_thread_arg
 	uint8_t				scan;
 }				t_thread_arg;
 
+/*		errors.c			*/
 void	clean_env(t_opt *opt);
 void	del(void *addr, size_t size);
-
 int    	bad_usage(const char *arg, int context);						/* Handle error on parsing argument and quit gracefully */
+/****************************/
 
-char    nmap_getopt(int nargs, char *const args[], int *optind);		/* Detect option to be treated and how to parse next argument */
-int     nmap_optloop(t_opt *options, int nargs, char *const args[]);	/* Iterate through argv to parse arguments from command line */
+/*		options.c			*/
+int             nmap_optloop(t_opt *options, int nargs, char *const args[]);
+/****************************/
 
-int		send_probe(struct sockaddr_in *addr, int port, uint8_t scan);
-
+/*		ft_nmap.c			*/
 int		nmap_wrapper(t_opt *opt);
+/****************************/
+
+/*		packets_forge.c		*/
+int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, int sock);
+/****************************/
+
+/*		netutils.c			*/
+char            *getlocalhost(t_opt *opt);
+unsigned short	csum(unsigned short *ptr, int nbytes);
+/****************************/
+
+/*		scan_*.c			*/
+int             scan_syn(t_opt *opt, int sock, char *addr, int port);
+int             scan_null(t_opt *opt, int sock, char *addr, int port);
+int             scan_xmas(t_opt *opt, int sock, char *addr, int port);
+/****************************/
 
 #endif

@@ -12,31 +12,6 @@
 
 #include "../includes/ft_nmap.h"
 
-void	del(void *addr, size_t size)
-{
-	(void)size;
-	free(addr);
-}
-
-void	clean_env(t_opt *opt)
-{
-	if (opt->ranges)
-		ft_lstdel(&opt->ranges, del);
-	if (opt->ports)
-		ft_lstdel(&opt->ports, del);
-	if (opt->ips)
-		ft_lstdel(&opt->ips, del);
-	//if (opt->sockets)
-	//	free(opt->sockets);
-	if (opt->dev)
-	{
-		if (opt->dev->device)
-			free(opt->dev->device);
-		free(opt->dev);
-	}
-	free(opt);
-}
-
 int		main(int ac, char **av)
 {
 	t_opt	*opt;
