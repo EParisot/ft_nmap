@@ -123,7 +123,7 @@ static t_device *init_ndevice()
     return (dev);
 }
 
-static inline int   nmap_pcapsetup(t_opt *opt, char* const filter)
+static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* const filter)
 {
     if (pcap_lookupnet(opt->dev->device, &(opt->dev->ip), &(opt->dev->subnet_mask), opt->dev->errbuf) == -1)
     {
@@ -131,26 +131,26 @@ static inline int   nmap_pcapsetup(t_opt *opt, char* const filter)
         opt->dev->ip = 0;
         opt->dev->subnet_mask = 0;
     }
-    opt->dev->handle = pcap_open_live(opt->dev->device, 1028, 0, 1000, opt->dev->errbuf);
-    if (opt->dev->handle == NULL)
+    opt->sockets[sock_id]->handle = pcap_open_live(opt->dev->device, 1028, 0, 1000, opt->dev->errbuf);
+    if (opt->sockets[sock_id]->handle == NULL)
     {
         fprintf(stderr, "ft_nmap: Cannot open interface %s", opt->dev->device);
         return (-1);
     }
-    if (pcap_compile(opt->dev->handle, &(opt->dev->filter), filter, 0, opt->dev->ip) == -1)
+    if (pcap_compile(opt->sockets[sock_id]->handle, &(opt->sockets[sock_id]->filter), filter, 0, opt->dev->ip) == -1)
     {
-        printf("ft_nmap: Bad filter - %s\n", pcap_geterr(opt->dev->handle));
+        printf("ft_nmap: Bad filter - %s\n", pcap_geterr(opt->sockets[sock_id]->handle));
         return (-1);
     }
-    if (pcap_setfilter(opt->dev->handle, &(opt->dev->filter)) == -1)
+    if (pcap_setfilter(opt->sockets[sock_id]->handle, &(opt->sockets[sock_id]->filter)) == -1)
     {
-        printf("ft_nmap: Error setting filter - %s\n", pcap_geterr(opt->dev->handle));
+        printf("ft_nmap: Error setting filter - %s\n", pcap_geterr(opt->sockets[sock_id]->handle));
         return (-1);
     }
     return (1);
 }
 
-static int	wait_response(t_opt *opt, struct sockaddr_in *addr, int port)
+static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int port)
 {
 	char	str_addr[INET_ADDRSTRLEN];
 	char	*str_port;
@@ -167,9 +167,9 @@ static int	wait_response(t_opt *opt, struct sockaddr_in *addr, int port)
 	ft_strcat(str_filter, " and port ");
 	ft_strcat(str_filter, str_port);
 	printf("listening %s\n", str_filter);
-	if (nmap_pcapsetup(opt, str_filter) == -1)
+	if (nmap_pcapsetup(opt, sock_id, str_filter) == -1)
 		return (-1);
-	pcap_dispatch(opt->dev->handle, 1, my_packet_handler, NULL);
+	pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, NULL);
 	free(str_port);
 	free(str_filter);
 	return (0);
@@ -180,11 +180,11 @@ void	*probe(void *vargs)
 	t_thread_arg *args = (t_thread_arg *)vargs;
 
 	send_probe(args->opt, args->ip, args->port, args->scan, args->opt->sockets[args->sock_id]->sock_fd);
-	if (wait_response(args->opt, args->ip, args->port))
+	if (wait_response(args->opt, args->sock_id, args->ip, args->port))
 		return (NULL);
 	args->opt->sockets[args->sock_id]->available = 1;
-	pcap_close(args->opt->dev->handle);
-	pcap_freecode(&(args->opt->dev->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
+	pcap_close(args->opt->sockets[args->sock_id]->handle);
+	pcap_freecode(&(args->opt->sockets[args->sock_id]->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
 	free(args);
 	return (NULL);
 }
@@ -237,12 +237,12 @@ static int	nmap_sender(t_opt *opt)
 							args->port = *(int *)(tmp_port->content);
 							args->scan = scan & opt->scanflag;
 							opt->sockets[sock_id]->available = 0;
-							/*if (pthread_create(opt->sockets[sock_id]->thread, NULL, probe, (void *)args))
+							if (pthread_create(opt->sockets[sock_id]->thread, NULL, probe, (void *)args))
 							{
 								fprintf(stderr, "Error: Thread not created\n");
 								return (-1);
-							}*/
-							probe(args);
+							}
+							//probe(args);
 							break;
 						}
 						if (sock_id == opt->threads - 1)
@@ -258,9 +258,9 @@ static int	nmap_sender(t_opt *opt)
 			// clean sockets
 			for (int i = 0; i < opt->threads; i++)
 			{
-				while (!opt->sockets[i]->available)
-					;
-				//pthread_join(*(opt->sockets[i]->thread), NULL);
+				//while (!opt->sockets[i]->available)
+				//	;
+				pthread_join(*(opt->sockets[i]->thread), NULL);
 				free(opt->sockets[i]->thread);
 				close(opt->sockets[i]->sock_fd);
 				free(opt->sockets[i]);
