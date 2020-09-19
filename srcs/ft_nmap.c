@@ -242,7 +242,6 @@ static int	nmap_sender(t_opt *opt)
 								fprintf(stderr, "Error: Thread not created\n");
 								return (-1);
 							}
-							//probe(args);
 							break;
 						}
 						if (sock_id == opt->threads - 1)
@@ -258,8 +257,6 @@ static int	nmap_sender(t_opt *opt)
 			// clean sockets
 			for (int i = 0; i < opt->threads; i++)
 			{
-				//while (!opt->sockets[i]->available)
-				//	;
 				pthread_join(*(opt->sockets[i]->thread), NULL);
 				free(opt->sockets[i]->thread);
 				close(opt->sockets[i]->sock_fd);
