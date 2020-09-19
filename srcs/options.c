@@ -234,6 +234,7 @@ static char    nmap_getopt(int nargs, char *const args[], int *optind)
 static int		set_defaults(t_opt *options)
 {
 	char	*dft_ports[3];
+	int		nb_to_scan = options->threads;
 
 	dft_ports[0] = "1\0";
 	dft_ports[1] = "1024\0";
@@ -248,8 +249,11 @@ static int		set_defaults(t_opt *options)
 			return (-1);
 	ft_lstsort(options->ports);
 	remove_doublons(options->ports);
+	nb_to_scan = ft_lstcount(options->ips) * ft_lstcount(options->ports);
 	if (options->threads == 0)
 		options->threads = 1;
+	else if (nb_to_scan < options->threads)
+		options->threads = nb_to_scan;
 	if (options->scanflag == 0)
 		options->scanflag = 0xff; // 0xff when all flags active
 	return (0);
