@@ -178,11 +178,11 @@ static int	wait_response(t_opt *opt, struct sockaddr_in *addr, int port)
 void	*probe(void *vargs)
 {
 	t_thread_arg *args = (t_thread_arg *)vargs;
-	*args->opt->sockets[args->sock_id]->available = 0;
+
 	send_probe(args->opt, args->ip, args->port, args->scan, args->opt->sockets[args->sock_id]->sock_fd);
 	if (wait_response(args->opt, args->ip, args->port))
 		return (NULL);
-	*args->opt->sockets[args->sock_id]->available = 1;
+	args->opt->sockets[args->sock_id]->available = 1;
 	pcap_close(args->opt->dev->handle);
 	pcap_freecode(&(args->opt->dev->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
 	free(args);
@@ -214,9 +214,7 @@ static int	nmap_sender(t_opt *opt)
 					fprintf(stderr, "Error: Socket file descriptor not received\n");
 					return (-1);
 				}
-				if ((opt->sockets[i]->available = (int *)malloc(sizeof(int))) == NULL)
-					return (-1);
-				*opt->sockets[i]->available = 1;
+				opt->sockets[i]->available = 1;
 				if ((opt->sockets[i]->thread = (pthread_t *)malloc(sizeof(pthread_t))) == NULL)
 					return (-1);
 			}
@@ -227,9 +225,8 @@ static int	nmap_sender(t_opt *opt)
 				{
 					while (1)
 					{
-						if (*opt->sockets[sock_id]->available == 1)
+						if (opt->sockets[sock_id]->available == 1)
 						{
-							/*printf("start_thread\n");*/
 							t_thread_arg *args;
 
 							if ((args = (t_thread_arg *)malloc(sizeof(t_thread_arg))) == NULL)
@@ -239,8 +236,12 @@ static int	nmap_sender(t_opt *opt)
 							args->ip = (struct sockaddr_in *)(tmp_ips->content);
 							args->port = *(int *)(tmp_port->content);
 							args->scan = scan & opt->scanflag;
-							//if (pthread_create(opt->sockets[sock_id]->thread, NULL, probe, (void *)args))
-							//	return (-1);
+							opt->sockets[sock_id]->available = 0;
+							/*if (pthread_create(opt->sockets[sock_id]->thread, NULL, probe, (void *)args))
+							{
+								fprintf(stderr, "Error: Thread not created\n");
+								return (-1);
+							}*/
 							probe(args);
 							break;
 						}
@@ -259,9 +260,8 @@ static int	nmap_sender(t_opt *opt)
 			{
 				while (!opt->sockets[i]->available)
 					;
-				//pthread_join(*opt->sockets[i]->thread, NULL);
+				//pthread_join(*(opt->sockets[i]->thread), NULL);
 				free(opt->sockets[i]->thread);
-				free(opt->sockets[i]->available);
 				close(opt->sockets[i]->sock_fd);
 				free(opt->sockets[i]);
 			}

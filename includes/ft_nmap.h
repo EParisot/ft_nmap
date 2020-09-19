@@ -46,7 +46,7 @@ typedef struct          s_device
 typedef struct	s_socket
 {
 	int			sock_fd;
-	int			*available;
+	int			available;
 	pthread_t	*thread;
 }				t_socket;
 
