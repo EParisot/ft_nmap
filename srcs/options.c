@@ -6,30 +6,6 @@ static int			retmsg(const char *str, const char* arg, int ret)
 	return (ret);
 }
 
-int	    	bad_usage(const char *arg, int context)
-{
-    const char *usage = "ft_nmap by eparisot and maabou-h @42 Paris\n\
-                        Usage: ft_nmap [--help] [--ports [NUMBER/RANGE]] --ip IPADDRESS [--speedup [NUMBER]] [--scan [TYPE]]\n\
-                        \t\tft_nmap [--help] [--ports [NUMBER/RANGE]] --file FILENAME [--speedup [NUMBER]] [--scan [TYPE]]\n\
-                        \t--help\tPrint this help screen\n\
-                        \t--ports\tports to scan (eg: 1-10 or 1,2,3 or 1,5-15) (1-65535 max)\n\
-                        \t--ip\t\tip addresses to scan in dot format\n\
-                        \t--file\t\tFile name containing IP addresses to scan,\n\
-                        \t--speedup\t[250 max] number of parallel threads to use\n\
-                        \t--scan\t\tSYN/NULL/FIN/XMAS/ACK/UDP";
-
-    if (context)
-	{
-		if (context > 0)
-			fprintf(stderr, "argument error: %s, context %d\n", arg, context);
-		else if (context == -1)
-			fprintf(stderr, "permission error\n");
-	}
-	else
-		printf("%s\n", usage);	
-	return (-1);
-}
-
 static void	remove_doublons(t_list *ports)
 {
 	t_list	*tmp_lst = ports;
@@ -64,9 +40,14 @@ static int	append_range(t_opt *options, char **dash_tab)
 		range.end = ft_atoi(dash_tab[1]);
 	else
 		range.end = range.start;
+	if (range.end < range.start)
+	{
+		int tmp = range.start;
+		range.start = range.end;
+		range.end = tmp;
+	}
 	if (range.start > 0 && range.start <= 65535 && \
-		range.end > 0 && range.end <= 65535 && \
-		range.end >= range.start)
+		range.end > 0 && range.end <= 65535)
 	{
 		for (int i = range.start; i <= range.end; i++)
 		{
@@ -106,7 +87,10 @@ static int	read_ports(t_opt *options, char *const args[], int *optind)
 			free(dash_tab[j]);
 		free(dash_tab);
 		if (ret)
+		{
+			retmsg("ft_nmap: error parsing port argument: %s\n", args[*optind + 1], -1);
 			break ;
+		}
 	}
 	(*optind)++;
 	for (size_t i = 0; comas_tab[i]; i++)
@@ -218,7 +202,7 @@ int		read_scantypes(t_opt *options, char *const args[], int *optind)
 	return (0);
 }
 
-char    nmap_getopt(int nargs, char *const args[], int *optind)	//TODO
+static char    nmap_getopt(int nargs, char *const args[], int *optind)
 {
 	if (*optind == nargs || !ft_strcmp("--help", args[*optind]))
     {
@@ -250,6 +234,7 @@ char    nmap_getopt(int nargs, char *const args[], int *optind)	//TODO
 static int		set_defaults(t_opt *options)
 {
 	char	*dft_ports[3];
+	int		nb_to_scan = options->threads;
 
 	dft_ports[0] = "1\0";
 	dft_ports[1] = "1024\0";
@@ -264,8 +249,11 @@ static int		set_defaults(t_opt *options)
 			return (-1);
 	ft_lstsort(options->ports);
 	remove_doublons(options->ports);
+	nb_to_scan = ft_lstcount(options->ips) * ft_lstcount(options->ports);
 	if (options->threads == 0)
 		options->threads = 1;
+	else if (nb_to_scan < options->threads)
+		options->threads = nb_to_scan;
 	if (options->scanflag == 0)
 		options->scanflag = 0xff; // 0xff when all flags active
 	return (0);
