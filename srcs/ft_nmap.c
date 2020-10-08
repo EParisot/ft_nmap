@@ -12,26 +12,23 @@
 
 #include "../includes/ft_nmap.h"
 
-static void		logs(FILE *fp, char *str)
-{
-	if (fp)
-		fwrite(str, ft_strlen(str), 1, fp);
-	printf("%s", str);
-}
-
 static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *header, const uint8_t *packet)
 {
     // traitement des paquets, pour l'instant je test
     // en affichant juste le type de paquet
 	FILE 				*logfile = (FILE *)(((t_probe_arg*)args)->logfile);
-	//pthread_mutex_t		*lock = (pthread_mutex_t *)(((t_probe_arg*)args)->lock); TODO : centralize prints to lock mutex before and release after
-    struct ether_header *eth_header;
-	char str[1024];
+	pthread_mutex_t		*lock = (pthread_mutex_t *)(((t_probe_arg*)args)->lock);
+    struct 				ether_header *eth_header;
+	int					str_len = 64;
+	char				str[str_len];
+	int 				buf_len = 1024;
+	char				buf[buf_len];
 
     eth_header = (struct ether_header *) packet;
-	logs(logfile, "------------------------\n");
+	ft_bzero(buf, buf_len);	
+	ft_strcat(buf, "------------------------\n");
     if (ntohs(eth_header->ether_type) != ETHERTYPE_IP) {
-        logs(logfile, "Not an IP packet. Skipping...\n\n");
+        ft_strcat(buf, "Not an IP packet. Skipping...\n\n");
         return;
     }
 
@@ -43,10 +40,12 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
        than what we currently have captured. If the snapshot
        length set with pcap_open_live() is too small, you may
        not have the whole packet. */
+	ft_bzero(str, str_len);
 	sprintf(str, "Total packet available: %d bytes\n", header->caplen);
-    logs(logfile, str);
+    ft_strcat(buf, str);
+	ft_bzero(str, str_len);
 	sprintf(str, "Expected packet size: %d bytes\n", header->len);
-    logs(logfile, str);
+    ft_strcat(buf, str);
 
     /* Pointers to start point of various headers */
     const u_char *ip_header;
@@ -67,8 +66,9 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
     /* The IHL is number of 32-bit segments. Multiply
        by four to get a byte count for pointer arithmetic */
     ip_header_length = ip_header_length * 4;
+	ft_bzero(str, str_len);
 	sprintf(str, "IP header length (IHL) in bytes: %d\n", ip_header_length);
-    logs(logfile, str);
+    ft_strcat(buf, str);
 
     /* Now that we know where the IP header is, we can 
        inspect the IP header for a protocol number to 
@@ -76,7 +76,8 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
        Protocol is always the 10th byte of the IP header */
     u_char protocol = *(ip_header + 9);
     if (protocol != IPPROTO_TCP) {
-        logs(logfile, "Not a TCP packet. Skipping...\n\n");
+        ft_bzero(str, str_len);
+		ft_strcat(buf, "Not a TCP packet. Skipping...\n\n");
         return;
     }
 
@@ -94,20 +95,24 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
        the IP header length. We multiply by four again to get a
        byte count. */
     tcp_header_length = tcp_header_length * 4;
+	ft_bzero(str, str_len);
 	sprintf(str, "TCP header length in bytes: %d\n", tcp_header_length);
-    logs(logfile, str);
+    ft_strcat(buf, str);
 
     /* Add up all the header sizes to find the payload offset */
     int total_headers_size = ethernet_header_length+ip_header_length+tcp_header_length;
+	ft_bzero(str, str_len);
 	sprintf(str, "Size of all headers combined: %d bytes\n", total_headers_size);
-    logs(logfile, str);
+    ft_strcat(buf, str);
     payload_length = header->caplen -
         (ethernet_header_length + ip_header_length + tcp_header_length);
+	ft_bzero(str, str_len);
 	sprintf(str, "Payload size: %d bytes\n", payload_length);
-    logs(logfile, str);
+    ft_strcat(buf, str);
     payload = packet + total_headers_size;
+	ft_bzero(str, str_len);
 	sprintf(str, "Memory address where payload begins: %p\n\n", payload);
-    logs(logfile, str);
+    ft_strcat(buf, str);
 
     /* Print payload in ASCII */
      
@@ -115,13 +120,19 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
         const unsigned char *temp_pointer = payload;
         int byte_count = 0;
         while (byte_count++ < payload_length) {
+			ft_bzero(str, str_len);
 			sprintf(str, "%c", *temp_pointer);
-            logs(logfile, str);
+            ft_strcat(buf, str);
             temp_pointer++;
         }
-        logs(logfile, "\n");
+        ft_strcat(buf, "\n");
     }
-        logs(logfile, "------------------------\n");
+    ft_strcat(buf, "------------------------\n");
+	pthread_mutex_lock(lock);
+	if (logfile)
+		fwrite(buf, ft_strlen(buf), 1, logfile);
+	printf("%s", buf);
+	pthread_mutex_unlock(lock);
 }
 
 static t_device *init_ndevice()
