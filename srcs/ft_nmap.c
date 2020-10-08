@@ -19,17 +19,17 @@ static void		logs(FILE *fp, char *str)
 	printf("%s", str);
 }
 
-static void     my_packet_handler(uint8_t *fp, const struct pcap_pkthdr *header, const uint8_t *packet)
+static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *header, const uint8_t *packet)
 {
     // traitement des paquets, pour l'instant je test
     // en affichant juste le type de paquet
-	FILE *logfile = (FILE *)fp;
+	FILE 				*logfile = (FILE *)(((t_probe_arg*)args)->logfile);
+	//pthread_mutex_t		*lock = (pthread_mutex_t *)(((t_probe_arg*)args)->lock); TODO : centralize prints to lock mutex before and release after
     struct ether_header *eth_header;
-    eth_header = (struct ether_header *) packet;
 	char str[1024];
 
+    eth_header = (struct ether_header *) packet;
 	logs(logfile, "------------------------\n");
-    
     if (ntohs(eth_header->ether_type) != ETHERTYPE_IP) {
         logs(logfile, "Not an IP packet. Skipping...\n\n");
         return;
@@ -170,9 +170,10 @@ static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* const filter)
 
 static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int port)
 {
-	char	str_addr[INET_ADDRSTRLEN];
-	char	*str_port;
-	char	*str_filter;
+	char		str_addr[INET_ADDRSTRLEN];
+	char		*str_port;
+	char		*str_filter;
+	t_probe_arg	*args;
 
 	ft_bzero(str_addr, INET_ADDRSTRLEN);
 	if ((str_filter = (char *)malloc(20 + INET_ADDRSTRLEN + 6)) == NULL)
@@ -187,9 +188,17 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	printf("listening %s\n", str_filter);
 	if (nmap_pcapsetup(opt, sock_id, str_filter) == -1)
 		return (-1);
-	pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)opt->logfile);
+	if ((args = (t_probe_arg*)malloc(sizeof(t_probe_arg))) == NULL)
+	{
+		printf("ft_nmap: Error probe failed malloc\n");
+		return (1);
+	}
+	args->logfile = opt->logfile;
+	args->lock = opt->lock;
+	pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)args);
 	free(str_port);
 	free(str_filter);
+	free(args);
 	return (0);
 }
 
@@ -214,6 +223,16 @@ static int	nmap_sender(t_opt *opt)
 	int 	sock_id = 0;
 	int		proto = IPPROTO_TCP;
 
+	if ((opt->lock = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t))) == NULL)
+	{
+		printf("ft_nmap: Error mutex malloc failed\n");
+        return (1);
+	}
+	if (pthread_mutex_init(opt->lock, NULL) != 0)
+    {
+        printf("ft_nmap: Error mutex init failed\n");
+        return (1);
+    }
 	// creates sockets
 	if ((opt->sockets = (t_socket **)malloc(opt->threads * sizeof(t_socket*))) == NULL)
 		return (-1);
@@ -285,6 +304,8 @@ static int	nmap_sender(t_opt *opt)
 			}
 		}
 	}
+	pthread_mutex_destroy(opt->lock);
+	free(opt->lock);
 	free(opt->sockets);
 	return (0);
 }

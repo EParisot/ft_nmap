@@ -52,15 +52,16 @@ typedef struct			s_socket
 
 typedef struct  s_opt
 {
-	char		*localhost;
-    uint8_t     threads;    /* 250 threads rentrent large dans un uint8_t */
-    uint8_t     scanflag;   /* 8 bits suffisent pour caler tous les flags possibles en binaire */ 
-	t_list		*ranges;	/* ranges option */
-    t_list      *ports;     /* liste de ports */
-    t_list      *ips;       /* nombre d'ip variable, une liste c'est bien */
-    t_device    *dev;
-	t_socket	**sockets;
-	FILE		*logfile;
+	char			*localhost;
+    uint8_t     	threads;    /* 250 threads rentrent large dans un uint8_t */
+    uint8_t     	scanflag;   /* 8 bits suffisent pour caler tous les flags possibles en binaire */ 
+	t_list			*ranges;	/* ranges option */
+    t_list      	*ports;     /* liste de ports */
+    t_list      	*ips;       /* nombre d'ip variable, une liste c'est bien */
+    t_device    	*dev;
+	t_socket		**sockets;
+	FILE			*logfile;
+	pthread_mutex_t	*lock;
 }               t_opt;
 
 typedef struct	s_range
@@ -76,7 +77,15 @@ typedef struct	s_thread_arg
 	struct sockaddr_in	*ip;
 	int					port;
 	uint8_t				scan;
+	pthread_mutex_t		*lock;
 }				t_thread_arg;
+
+typedef struct	s_probe_arg
+{
+	FILE			*logfile;
+	pthread_mutex_t	*lock;
+}				t_probe_arg;
+
 
 /*		errors.c			*/
 void	clean_env(t_opt *opt);
