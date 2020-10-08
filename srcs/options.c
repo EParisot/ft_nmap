@@ -180,7 +180,7 @@ static int	append_scantype(t_opt *options, char *type)
 	return (0);
 }
 
-int		read_scantypes(t_opt *options, char *const args[], int *optind)
+static int	read_scantypes(t_opt *options, char *const args[], int *optind)
 {
 	char	**flags;
 	int		ret = 0;
@@ -200,6 +200,36 @@ int		read_scantypes(t_opt *options, char *const args[], int *optind)
 	free(flags);
 	(*optind)++;
 	return (0);
+}
+
+static int	fread_logfile(t_opt *options, char *const args[], int *optind)
+{
+	// try to open logfile if exists, or creates one if not
+	FILE				*fp;
+	int					fd;
+	int					ret;
+
+	ret = 0;
+	if (args[*optind + 1] == NULL)
+		return (retmsg("ft_nmap: error: missing argument near %s\n", "--log", -1));
+	// check if file exists
+	if ((fp = fopen(args[*optind + 1], "r")) == NULL)
+	{
+		if ((fp = fopen(args[*optind + 1], "w")) == NULL)
+			return (retmsg("ft_nmap: error: cannot create %s file\n", "--log", -1));
+		options->logfile = fileno(fp);
+	}
+	else
+	{
+		fd = fileno(fp);
+		// TODO read file content
+		close(fd);
+		if ((fp = fopen(args[*optind + 1], "a")) == NULL)
+			return (retmsg("ft_nmap: error: cannot create %s file\n", "--log", -1));
+		options->logfile = fileno(fp);
+	}
+	(*optind)++;
+	return (ret);
 }
 
 static char    nmap_getopt(int nargs, char *const args[], int *optind)
@@ -228,6 +258,10 @@ static char    nmap_getopt(int nargs, char *const args[], int *optind)
     {
         return 's';
     }
+	else if (!ft_strcmp("--log", args[*optind]) && *optind + 1 < nargs)
+	{
+		return 'l';
+	}
 	return 'h';
 }
 
@@ -318,6 +352,9 @@ int     nmap_optloop(t_opt *options, int nargs, char *const args[])
 			break;
             case 's':
             	ret = read_scantypes(options, args, &optind);
+			break;
+			case 'l':
+				ret = fread_logfile(options, args, &optind);
 			break;
 			if (ret)
 				return (-1);

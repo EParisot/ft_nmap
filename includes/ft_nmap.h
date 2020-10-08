@@ -60,6 +60,7 @@ typedef struct  s_opt
     t_list      *ips;       /* nombre d'ip variable, une liste c'est bien */
     t_device    *dev;
 	t_socket	**sockets;
+	int			logfile;
 }               t_opt;
 
 typedef struct	s_range

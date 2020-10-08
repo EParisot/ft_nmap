@@ -28,6 +28,7 @@ int		main(int ac, char **av)
 	opt->dev = NULL;
 	opt->threads = 0;
 	opt->scanflag = 0;
+	opt->logfile = 0;
 	if (ac <= 1)
 	{
 		bad_usage(NULL, 0);

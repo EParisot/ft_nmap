@@ -194,6 +194,7 @@ static int	nmap_sender(t_opt *opt)
 	t_list	*tmp_ips = opt->ips;
 	t_list	*tmp_port = opt->ports;
 	int 	sock_id = 0;
+	int		proto = IPPROTO_TCP;
 
 	// creates sockets
 	if ((opt->sockets = (t_socket **)malloc(opt->threads * sizeof(t_socket*))) == NULL)
@@ -204,12 +205,14 @@ static int	nmap_sender(t_opt *opt)
 	{
 		if (scan & opt->scanflag)
 		{
-			// open sockets
+			// open sockets and create threads
+			if (scan == 64)
+				proto = IPPROTO_UDP;
 			for (int i = 0; i < opt->threads; i++)
 			{
 				if ((opt->sockets[i] = (t_socket *)malloc(sizeof(t_socket))) == NULL)
 					return (-1);
-				if ((opt->sockets[i]->sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0)
+				if ((opt->sockets[i]->sock_fd = socket(AF_INET, SOCK_RAW, proto)) < 0)
 				{
 					fprintf(stderr, "Error: Socket file descriptor not received\n");
 					return (-1);
