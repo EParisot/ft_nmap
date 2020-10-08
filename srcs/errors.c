@@ -35,7 +35,7 @@ void	clean_env(t_opt *opt)
 		free(opt->dev);
 	}
 	if (opt->logfile)
-		close(opt->logfile);
+		fclose(opt->logfile);
 	free(opt);
 }
 

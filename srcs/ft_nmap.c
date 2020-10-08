@@ -12,16 +12,26 @@
 
 #include "../includes/ft_nmap.h"
 
-static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *header, const uint8_t *packet)
+static void		logs(FILE *fp, char *str)
+{
+	if (fp)
+		fwrite(str, ft_strlen(str), 1, fp);
+	printf("%s", str);
+}
+
+static void     my_packet_handler(uint8_t *fp, const struct pcap_pkthdr *header, const uint8_t *packet)
 {
     // traitement des paquets, pour l'instant je test
     // en affichant juste le type de paquet
-	(void)args;
+	FILE *logfile = (FILE *)fp;
     struct ether_header *eth_header;
     eth_header = (struct ether_header *) packet;
-    printf("------------------------\n");
+	char str[1024];
+
+	logs(logfile, "------------------------\n");
+    
     if (ntohs(eth_header->ether_type) != ETHERTYPE_IP) {
-        printf("Not an IP packet. Skipping...\n\n");
+        logs(logfile, "Not an IP packet. Skipping...\n\n");
         return;
     }
 
@@ -33,8 +43,10 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
        than what we currently have captured. If the snapshot
        length set with pcap_open_live() is too small, you may
        not have the whole packet. */
-    printf("Total packet available: %d bytes\n", header->caplen);
-    printf("Expected packet size: %d bytes\n", header->len);
+	sprintf(str, "Total packet available: %d bytes\n", header->caplen);
+    logs(logfile, str);
+	sprintf(str, "Expected packet size: %d bytes\n", header->len);
+    logs(logfile, str);
 
     /* Pointers to start point of various headers */
     const u_char *ip_header;
@@ -55,7 +67,8 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
     /* The IHL is number of 32-bit segments. Multiply
        by four to get a byte count for pointer arithmetic */
     ip_header_length = ip_header_length * 4;
-    printf("IP header length (IHL) in bytes: %d\n", ip_header_length);
+	sprintf(str, "IP header length (IHL) in bytes: %d\n", ip_header_length);
+    logs(logfile, str);
 
     /* Now that we know where the IP header is, we can 
        inspect the IP header for a protocol number to 
@@ -63,7 +76,7 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
        Protocol is always the 10th byte of the IP header */
     u_char protocol = *(ip_header + 9);
     if (protocol != IPPROTO_TCP) {
-        printf("Not a TCP packet. Skipping...\n\n");
+        logs(logfile, "Not a TCP packet. Skipping...\n\n");
         return;
     }
 
@@ -81,16 +94,20 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
        the IP header length. We multiply by four again to get a
        byte count. */
     tcp_header_length = tcp_header_length * 4;
-    printf("TCP header length in bytes: %d\n", tcp_header_length);
+	sprintf(str, "TCP header length in bytes: %d\n", tcp_header_length);
+    logs(logfile, str);
 
     /* Add up all the header sizes to find the payload offset */
     int total_headers_size = ethernet_header_length+ip_header_length+tcp_header_length;
-    printf("Size of all headers combined: %d bytes\n", total_headers_size);
+	sprintf(str, "Size of all headers combined: %d bytes\n", total_headers_size);
+    logs(logfile, str);
     payload_length = header->caplen -
         (ethernet_header_length + ip_header_length + tcp_header_length);
-    printf("Payload size: %d bytes\n", payload_length);
+	sprintf(str, "Payload size: %d bytes\n", payload_length);
+    logs(logfile, str);
     payload = packet + total_headers_size;
-    printf("Memory address where payload begins: %p\n\n", payload);
+	sprintf(str, "Memory address where payload begins: %p\n\n", payload);
+    logs(logfile, str);
 
     /* Print payload in ASCII */
      
@@ -98,12 +115,13 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
         const unsigned char *temp_pointer = payload;
         int byte_count = 0;
         while (byte_count++ < payload_length) {
-            printf("%c", *temp_pointer);
+			sprintf(str, "%c", *temp_pointer);
+            logs(logfile, str);
             temp_pointer++;
         }
-        printf("\n");
+        logs(logfile, "\n");
     }
-        printf("------------------------\n");
+        logs(logfile, "------------------------\n");
 }
 
 static t_device *init_ndevice()
@@ -169,7 +187,7 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	printf("listening %s\n", str_filter);
 	if (nmap_pcapsetup(opt, sock_id, str_filter) == -1)
 		return (-1);
-	pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, NULL);
+	pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)opt->logfile);
 	free(str_port);
 	free(str_filter);
 	return (0);

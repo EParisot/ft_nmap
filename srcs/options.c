@@ -202,11 +202,10 @@ static int	read_scantypes(t_opt *options, char *const args[], int *optind)
 	return (0);
 }
 
-static int	fread_logfile(t_opt *options, char *const args[], int *optind)
+static int	fread_logfile(t_opt *options, int nargs, char *const args[], int *optind)
 {
 	// try to open logfile if exists, or creates one if not
 	FILE				*fp;
-	int					fd;
 	int					ret;
 
 	ret = 0;
@@ -217,16 +216,21 @@ static int	fread_logfile(t_opt *options, char *const args[], int *optind)
 	{
 		if ((fp = fopen(args[*optind + 1], "w")) == NULL)
 			return (retmsg("ft_nmap: error: cannot create %s file\n", "--log", -1));
-		options->logfile = fileno(fp);
+		options->logfile = fp;
+		for (int i = 0; i < nargs; i++)
+		{
+			fwrite(args[i], ft_strlen(args[i]), 1, options->logfile);
+			fwrite(" ", 1, 1, options->logfile);
+		}
+		fwrite("\n", 1, 1, options->logfile);
 	}
 	else
 	{
-		fd = fileno(fp);
-		// TODO read file content
-		close(fd);
+		// TODO read file content, restart parsing and avoid already done scans
+		fclose(fp);
 		if ((fp = fopen(args[*optind + 1], "a")) == NULL)
 			return (retmsg("ft_nmap: error: cannot create %s file\n", "--log", -1));
-		options->logfile = fileno(fp);
+		options->logfile = fp;
 	}
 	(*optind)++;
 	return (ret);
@@ -354,7 +358,7 @@ int     nmap_optloop(t_opt *options, int nargs, char *const args[])
             	ret = read_scantypes(options, args, &optind);
 			break;
 			case 'l':
-				ret = fread_logfile(options, args, &optind);
+				ret = fread_logfile(options, nargs, args, &optind);
 			break;
 			if (ret)
 				return (-1);
