@@ -1,6 +1,6 @@
 #include "../includes/ft_nmap.h"
 
-typedef struct s_psh
+typedef struct __attribute__((packed)) s_psh
 {
 	u_int32_t source_address;
 	u_int32_t dest_address;
@@ -10,7 +10,7 @@ typedef struct s_psh
     struct tcphdr tcp;
 }               t_psh;
 
-static void syn_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, struct in_addr *dest_ip)
+static void syn_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, char *addr)
 {
     iph->ihl = 5;
 	iph->version = 4;
@@ -22,7 +22,7 @@ static void syn_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, struct in_a
 	iph->protocol = IPPROTO_TCP;
 	iph->check = 0;
 	iph->saddr = inet_addr(opt->localhost);
-	iph->daddr = (*dest_ip).s_addr;
+	iph->daddr = inet_addr(addr);
     iph->check = csum((unsigned short *) datagram, iph->tot_len >> 1);
 }
 
@@ -44,53 +44,48 @@ static void syn_tcphdr(struct tcphdr* tcph)
 	tcph->urg_ptr = 0;
 }
 
-static struct sockaddr_in *probe_fillsynpacket(t_opt *opt, int sock, char **pkt, char *addr, int port)
+static struct sockaddr_in probe_fillsynpacket(t_opt *opt, int sock, char **pkt, char *addr, int port)
 {
 
 	char *datagram = *pkt;	
     int one = 1;
 	const int *val = &one;
     struct tcphdr   *tcph;
-	struct sockaddr_in  *dest;
-    struct in_addr *dest_ip;
+	struct sockaddr_in  dest;
     t_psh   psh;
 
-	if ((dest = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in))) == NULL)
-		return (NULL);
-	if ((dest_ip = (struct in_addr *)malloc(sizeof(struct in_addr))) == NULL)
-		return (NULL);
-	ft_bzero(dest, sizeof(struct sockaddr_in));
+	ft_bzero(&dest, sizeof(struct sockaddr_in));
     tcph = (struct tcphdr *)(datagram + sizeof(struct ip));
-    dest_ip->s_addr = inet_addr(addr);
     ft_memset(datagram, 0, 4096);
-    syn_iphdr(opt, (struct iphdr *)datagram, datagram, dest_ip);
+    syn_iphdr(opt, (struct iphdr *)datagram, datagram, addr);
     syn_tcphdr((struct tcphdr *)(datagram + sizeof(struct ip)));
 	if (setsockopt(sock, IPPROTO_IP, IP_HDRINCL, val, sizeof (one)) < 0)
 	{
 		printf ("Error setting IP_HDRINCL. \n");
 	}
-	dest->sin_family = AF_INET;
-	dest->sin_addr.s_addr = dest_ip->s_addr;
+	dest.sin_family = AF_INET;
+	dest.sin_addr.s_addr = inet_addr(addr);
     tcph->dest = htons(port);
 	tcph->check = 0;
     psh.source_address = inet_addr(opt->localhost);
-	psh.dest_address = dest->sin_addr.s_addr;
+	psh.dest_address = dest.sin_addr.s_addr;
 	psh.placeholder = 0;
 	psh.protocol = IPPROTO_TCP;
 	psh.tcp_length = htons(sizeof(struct tcphdr));
 	ft_memcpy(&psh.tcp, tcph, sizeof(struct tcphdr));
 	tcph->check = csum((unsigned short*)&psh, sizeof(t_psh));
-	free(dest_ip);
     return (dest);
 }
 
 int scan_syn(t_opt *opt, int sock, char *addr, int port)
 {
     int ret;
+	unsigned short hl;
     struct timeval tv;
     char    pkt[4096];
+	char	rcpkt[4096];
     char *tmp = pkt;
-    struct sockaddr_in *dest;
+    struct sockaddr_in dest;
 
     ret = -1;
     tv.tv_sec = 5;
@@ -100,15 +95,29 @@ int scan_syn(t_opt *opt, int sock, char *addr, int port)
         printf("ft_nmap: timeout sending probe\n");
         return -1;
     }
-    if ((dest = probe_fillsynpacket(opt, sock, &tmp, addr, port)) == NULL)
-		return (-1);
-    printf("sending packet\n");
-    if (sendto(sock, pkt, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr *)dest, sizeof(*dest)) < 0)
+	dest = probe_fillsynpacket(opt, sock, &tmp, addr, port);
+	if(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv)) < 0)
+    {
+        printf("ft_nmap: timeout recv probe\n");
+        return -1;
+    }
+    if (sendto(sock, pkt, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr*)&dest, sizeof(dest)) < 0)
 	{
-		free(dest);
 		printf ("Error sending syn packet.\n");
 		return -1;
 	}
-	free(dest);
+	ft_bzero(&rcpkt, sizeof(rcpkt));
+	if ((ret = recvfrom(sock, rcpkt, 4096, 0, NULL, NULL)) > 0)
+	{
+		struct iphdr* iph = (struct iphdr*)rcpkt;
+		hl = iph->ihl * 4;
+		struct tcphdr *tcp = (struct tcphdr*)(rcpkt + hl);
+		if (tcp->th_flags & TH_RST)
+			printf("SYN port %d is closed\n", port);
+		else if (tcp->th_flags & TH_SYN || tcp->th_flags & TH_ACK)
+			printf("SYN port %d is open\n", port);
+	}
+	else
+		printf("SYN port %d is filtered\n", port);
     return ret;
 }

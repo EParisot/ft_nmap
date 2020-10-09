@@ -25,13 +25,15 @@ static int probe_connect(int sock, char *addr, int port)
     return ret;
 }
 
+
+
 int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, int sock)
 {
 	char	str_addr[INET_ADDRSTRLEN];
 
 	ft_bzero(str_addr, INET_ADDRSTRLEN);
 	inet_ntop(AF_INET, &addr->sin_addr, str_addr, INET_ADDRSTRLEN);
-	printf("socket: %d Sending probe, packet type %d to %s on port %d\n", sock, scan, str_addr, port);
+	//printf("socket: %d Sending probe, packet type %d to %s on port %d\n", sock, scan, str_addr, port);
 	if (probe_connect(sock, str_addr, port) < 0)
     {
         printf("Could not create socket\n");
@@ -46,19 +48,19 @@ int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, in
             scan_null(opt, sock, str_addr, port);
             break ;
         case (1 << (3)):
-            printf("not syn, ack\n");
+            scan_ack(opt, sock, str_addr, port);
             break ;
         case (1 << (4)):
-            printf("not syn, fin\n");
+            scan_fin(opt, sock, str_addr, port);
             break ;
         case (1 << (5)):
             scan_xmas(opt, sock, str_addr, port);
             break ;
         case (1 << (6)):
-            printf("not syn, udp\n");
+            scan_udp(opt, sock, str_addr, port);
             break ;
         default:
-            printf("not syn, ALL SCANS\n");
+            printf("already scannedall\n");
             break ;
     }
     return (0);

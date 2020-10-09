@@ -27,11 +27,11 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
     eth_header = (struct ether_header *) packet;
 	ft_bzero(buf, buf_len);	
 	ft_strcat(buf, "------------------------\n");
-    if (ntohs(eth_header->ether_type) != ETHERTYPE_IP) {
+    if (ntohs(eth_header->ether_type) != ETHERTYPE_IP)
+	{
         ft_strcat(buf, "Not an IP packet. Skipping...\n\n");
         return;
     }
-
     /* The total packet length, including all headers
        and the data payload is stored in
        header->len and header->caplen. Caplen is
@@ -49,84 +49,16 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 
     /* Pointers to start point of various headers */
     const u_char *ip_header;
-    const u_char *tcp_header;
-    const u_char *payload;
 
     /* Header lengths in bytes */
-    int ethernet_header_length = 14; /* Doesn't change */
-    int ip_header_length;
-    int tcp_header_length;
-    int payload_length;
 
-    /* Find start of IP header */
-    ip_header = packet + ethernet_header_length;
-    /* The second-half of the first byte in ip_header
-       contains the IP header length (IHL). */
-    ip_header_length = ((*ip_header) & 0x0F);
-    /* The IHL is number of 32-bit segments. Multiply
-       by four to get a byte count for pointer arithmetic */
-    ip_header_length = ip_header_length * 4;
-	ft_bzero(str, str_len);
-	sprintf(str, "IP header length (IHL) in bytes: %d\n", ip_header_length);
-    ft_strcat(buf, str);
-
-    /* Now that we know where the IP header is, we can 
-       inspect the IP header for a protocol number to 
-       make sure it is TCP before going any further. 
-       Protocol is always the 10th byte of the IP header */
+    ip_header = packet + 14;
     u_char protocol = *(ip_header + 9);
-    if (protocol != IPPROTO_TCP) {
-        ft_bzero(str, str_len);
-		ft_strcat(buf, "Not a TCP packet. Skipping...\n\n");
-        return;
-    }
+    if (protocol == IPPROTO_TCP) 
+		ft_strcat(buf, "TCP Packet\n");
+	else if (protocol == IPPROTO_UDP)
+		ft_strcat(buf, "UDP Packet\n");
 
-    /* Add the ethernet and ip header length to the start of the packet
-       to find the beginning of the TCP header */
-    tcp_header = packet + ethernet_header_length + ip_header_length;
-    /* TCP header length is stored in the first half 
-       of the 12th byte in the TCP header. Because we only want
-       the value of the top half of the byte, we have to shift it
-       down to the bottom half otherwise it is using the most 
-       significant bits instead of the least significant bits */
-    tcp_header_length = ((*(tcp_header + 12)) & 0xF0) >> 4;
-    /* The TCP header length stored in those 4 bits represents
-       how many 32-bit words there are in the header, just like
-       the IP header length. We multiply by four again to get a
-       byte count. */
-    tcp_header_length = tcp_header_length * 4;
-	ft_bzero(str, str_len);
-	sprintf(str, "TCP header length in bytes: %d\n", tcp_header_length);
-    ft_strcat(buf, str);
-
-    /* Add up all the header sizes to find the payload offset */
-    int total_headers_size = ethernet_header_length+ip_header_length+tcp_header_length;
-	ft_bzero(str, str_len);
-	sprintf(str, "Size of all headers combined: %d bytes\n", total_headers_size);
-    ft_strcat(buf, str);
-    payload_length = header->caplen -
-        (ethernet_header_length + ip_header_length + tcp_header_length);
-	ft_bzero(str, str_len);
-	sprintf(str, "Payload size: %d bytes\n", payload_length);
-    ft_strcat(buf, str);
-    payload = packet + total_headers_size;
-	ft_bzero(str, str_len);
-	sprintf(str, "Memory address where payload begins: %p\n\n", payload);
-    ft_strcat(buf, str);
-
-    /* Print payload in ASCII */
-     
-    if (payload_length > 0) {
-        const unsigned char *temp_pointer = payload;
-        int byte_count = 0;
-        while (byte_count++ < payload_length) {
-			ft_bzero(str, str_len);
-			sprintf(str, "%c", *temp_pointer);
-            ft_strcat(buf, str);
-            temp_pointer++;
-        }
-        ft_strcat(buf, "\n");
-    }
     ft_strcat(buf, "------------------------\n");
 	pthread_mutex_lock(lock);
 	if (logfile)
@@ -196,7 +128,7 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	str_port = ft_itoa(port);
 	ft_strcat(str_filter, " and port ");
 	ft_strcat(str_filter, str_port);
-	printf("listening %s\n", str_filter);
+	//printf("listening %s\n", str_filter);
 	if (nmap_pcapsetup(opt, sock_id, str_filter) == -1)
 		return (-1);
 	if ((args = (t_probe_arg*)malloc(sizeof(t_probe_arg))) == NULL)
@@ -229,8 +161,8 @@ void	*probe(void *vargs)
 
 static int	nmap_sender(t_opt *opt)
 {
-	t_list	*tmp_ips = opt->ips;
-	t_list	*tmp_port = opt->ports;
+	t_list	*tmp_ips;
+	t_list	*tmp_port;
 	int 	sock_id = 0;
 	int		proto = IPPROTO_TCP;
 
@@ -249,12 +181,14 @@ static int	nmap_sender(t_opt *opt)
 		return (-1);
 
 	// nmap loop
-	for (int scan = 1; scan <= 0xFF; scan = scan << 1)
+	for (int scan = 2; scan <= 0x7F; scan = scan << 1)
 	{
+		tmp_ips = opt->ips;
+		tmp_port = opt->ports;
 		if (scan & opt->scanflag)
-		{
+		{	printf("%d, opt->scanflags %d\n", scan, opt->scanflag);
 			// open sockets and create threads
-			if (scan == 64)
+			if (scan == 128)
 				proto = IPPROTO_UDP;
 			for (int i = 0; i < opt->threads; i++)
 			{

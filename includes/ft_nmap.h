@@ -30,6 +30,7 @@
 # include <ifaddrs.h> // for getifaddr and ifaddr structcs
 # include <netinet/ip.h> // for iphdr struct
 # include <netinet/tcp.h> // for tcphdr struct
+#include<netinet/udp.h>
 # include<string.h>
 # include<sys/socket.h>
 
@@ -114,6 +115,9 @@ unsigned short	csum(unsigned short *ptr, int nbytes);
 int             scan_syn(t_opt *opt, int sock, char *addr, int port);
 int             scan_null(t_opt *opt, int sock, char *addr, int port);
 int             scan_xmas(t_opt *opt, int sock, char *addr, int port);
+int             scan_udp(t_opt *opt, int sock, char *addr, int port);
+int             scan_ack(t_opt *opt, int sock, char *addr, int port);
+int             scan_fin(t_opt *opt, int sock, char *addr, int port);
 /****************************/
 
 #endif

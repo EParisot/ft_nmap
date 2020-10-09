@@ -20,6 +20,9 @@ SRCS	=	srcs/main.c				\
 			srcs/netutils.c			\
 			srcs/scan_null.c		\
 			srcs/scan_syn.c			\
+			srcs/scan_ack.c			\
+			srcs/scan_fin.c			\
+			srcs/scan_udp.c			\
 			srcs/scan_xmas.c		
 
 INC		=	includes/ft_nmap.h

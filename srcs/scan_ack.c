@@ -10,7 +10,7 @@ typedef struct s_psh
     struct tcphdr tcp;
 }               t_psh;
 
-static void null_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, struct in_addr dest_ip)
+static void ack_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, struct in_addr dest_ip)
 {
     iph->ihl = 5;
 	iph->version = 4;
@@ -26,14 +26,14 @@ static void null_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, struct in_
     iph->check = csum((unsigned short *) datagram, iph->tot_len >> 1);
 }
 
-static void null_tcphdr(struct tcphdr* tcph)
+static void ack_tcphdr(struct tcphdr* tcph)
 {
     tcph->source = htons(9999);
 	tcph->dest = htons(80);
 	tcph->seq = htonl(1105024978);
 	tcph->ack_seq = 0;
 	tcph->doff = sizeof(struct tcphdr) / 4;
-	tcph->fin=0;
+	tcph->fin=1;
 	tcph->syn=0;
 	tcph->rst=0;
 	tcph->psh=0;
@@ -44,7 +44,7 @@ static void null_tcphdr(struct tcphdr* tcph)
 	tcph->urg_ptr = 0;
 }
 
-static struct sockaddr_in probe_fillnullpacket(t_opt *opt, int sock, char **pkt, char *addr, int port)
+static struct sockaddr_in probe_fillackpacket(t_opt *opt, int sock, char **pkt, char *addr, int port)
 {
 
 	char *datagram = *pkt;	
@@ -58,8 +58,8 @@ static struct sockaddr_in probe_fillnullpacket(t_opt *opt, int sock, char **pkt,
     tcph = (struct tcphdr *)(datagram + sizeof(struct ip));
     dest_ip.s_addr = inet_addr(addr);
     ft_memset(datagram, 0, 4096);
-    null_iphdr(opt, (struct iphdr *)datagram, datagram, dest_ip);
-    null_tcphdr((struct tcphdr *)(datagram + sizeof(struct ip)));
+    ack_iphdr(opt, (struct iphdr *)datagram, datagram, dest_ip);
+    ack_tcphdr((struct tcphdr *)(datagram + sizeof(struct ip)));
 	if (setsockopt(sock, IPPROTO_IP, IP_HDRINCL, val, sizeof (one)) < 0)
 	{
 		printf ("Error setting IP_HDRINCL. \n");
@@ -78,14 +78,14 @@ static struct sockaddr_in probe_fillnullpacket(t_opt *opt, int sock, char **pkt,
     return dest;
 }
 
-int scan_null(t_opt *opt, int sock, char *addr, int port)
+int scan_ack(t_opt *opt, int sock, char *addr, int port)
 {
     int ret;
 	unsigned short hl;
     struct timeval tv;
     char    pkt[4096];
-	char	rcpkt[4096];
     char *tmp = pkt;
+	char rcpkt[4096];
     struct sockaddr_in dest;
 
     ret = -1;
@@ -96,30 +96,29 @@ int scan_null(t_opt *opt, int sock, char *addr, int port)
         printf("ft_nmap: timeout sending probe\n");
         return -1;
     }
-	if(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv)) < 0)
+    dest = probe_fillackpacket(opt, sock, &tmp, addr, port);
+		if(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv)) < 0)
     {
         printf("ft_nmap: timeout recv probe\n");
         return -1;
     }
-    dest = probe_fillnullpacket(opt, sock, &tmp, addr, port);
     if (sendto(sock, pkt, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr *)&dest, sizeof(dest)) < 0)
 	{
-		printf ("Error sending null packet.\n");
+		printf ("Error sending ack packet.\n");
 		return -1;
 	}
 	ft_bzero(&rcpkt, sizeof(rcpkt));
-	if ((ret = recvfrom(sock, rcpkt, sizeof(rcpkt), 0, NULL, NULL)) > 0)
+	if (recvfrom(sock, rcpkt, sizeof(rcpkt), 0, NULL, NULL) > 0)
 	{
 		struct iphdr* iph = (struct iphdr*)rcpkt;
 		hl = iph->ihl * 4;
 		struct tcphdr *tcp = (struct tcphdr*)(rcpkt + hl);
-		if (tcp->th_flags & 0x04)
-			printf("NULL port %d is closed\n", port);
+		if (tcp->th_flags & 4)
+			printf("ACK port %d is non-filtered\n", port);
 		else
-			printf("NULL port %d is maybe filtered\n", port);
-		// missing icmp errr to mark as filtered
+			printf("ACK port %d is open|filtered\n", port);
 	}
 	else
-		printf("NULL port %d is open|filtered\n", port);
+		printf("ACK port %d is filtered\n", port);
     return ret;
 }
