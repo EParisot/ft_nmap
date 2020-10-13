@@ -14,14 +14,15 @@ static void	remove_doublons(t_list *ports)
 
 	while (tmp_lst)
 	{
-		if (*(int *)tmp_lst->content > last_val)
-		{
+		//printf("port : %d\n", *(int *)(tmp_lst->content));
+		if (*(int *)(tmp_lst->content) > last_val)
+		{//printf("ok\n");
 			last_val = *(int *)tmp_lst->content;
 			last_port = tmp_lst;
 			tmp_lst = tmp_lst->next;
 		}
 		else
-		{
+		{//printf("doublon\n");
 			last_port->next = tmp_lst->next;
 			ft_lstdelone(&tmp_lst, del);
 			tmp_lst = last_port->next;
@@ -159,9 +160,15 @@ static int	read_ipaddr(t_opt *options, char *const args[], int *optind)
 
 static int	read_speedup(t_opt *options, char *const args[], int *optind)
 {
+	int threads_nb = 0;
+
 	if (args[*optind + 1] == NULL)
 		return (retmsg("ft_nmap: error: missing argument near %s\n", "--speedup", -1));
-	options->threads = ft_atoi(args[*optind + 1]);
+	threads_nb = ft_atoi(args[*optind + 1]);
+	if (threads_nb <= 250)
+		options->threads = threads_nb;
+	else
+		options->threads = 250;
 	(*optind)++;
 	return (0);
 }
@@ -269,6 +276,11 @@ static char    nmap_getopt(int nargs, char *const args[], int *optind)
 	return 'h';
 }
 
+int				ft_cmp(void *a, void *b)
+{
+	return (*(int*)b - *(int*)a);
+}
+
 static int		set_defaults(t_opt *options)
 {
 	char	*dft_ports[3];
@@ -285,7 +297,7 @@ static int		set_defaults(t_opt *options)
 	if (options->ports == NULL)
 		if (append_range(options, dft_ports))
 			return (-1);
-	ft_lstsort(options->ports);
+	ft_lstsort(options->ports, ft_cmp);
 	remove_doublons(options->ports);
 	nb_to_scan = ft_lstcount(options->ips) * ft_lstcount(options->ports);
 	if (options->threads == 0)
