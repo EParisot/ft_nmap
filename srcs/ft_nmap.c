@@ -18,13 +18,15 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
     // en affichant juste le type de paquet
 	FILE 				*logfile = (FILE *)(((t_probe_arg*)args)->logfile);
 	pthread_mutex_t		*lock = (pthread_mutex_t *)(((t_probe_arg*)args)->lock);
+	//int					port = (int)(((t_probe_arg*)args)->port);
+	//uint8_t				scan = (uint8_t)(((t_probe_arg*)args)->scan);
     struct 				ether_header *eth_header;
 	int					str_len = 64;
 	char				str[str_len];
 	int 				buf_len = 1024;
 	char				buf[buf_len];
 
-    eth_header = (struct ether_header *) packet;
+    eth_header = (struct ether_header *)packet;
 	ft_bzero(buf, buf_len);	
 	ft_strcat(buf, "------------------------\n");
     if (ntohs(eth_header->ether_type) != ETHERTYPE_IP)
@@ -40,6 +42,7 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
        than what we currently have captured. If the snapshot
        length set with pcap_open_live() is too small, you may
        not have the whole packet. */
+
 	ft_bzero(str, str_len);
 	sprintf(str, "Total packet available: %d bytes\n", header->caplen);
     ft_strcat(buf, str);
@@ -111,7 +114,7 @@ static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* const filter)
     return (1);
 }
 
-static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int port)
+static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int port, uint8_t scan)
 {
 	char		str_addr[INET_ADDRSTRLEN];
 	char		*str_port;
@@ -119,16 +122,26 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	t_probe_arg	*args;
 
 	ft_bzero(str_addr, INET_ADDRSTRLEN);
-	if ((str_filter = (char *)malloc(20 + INET_ADDRSTRLEN + 6)) == NULL)
+	if ((str_filter = (char *)malloc(46 + 2 * INET_ADDRSTRLEN + 6)) == NULL)
 		return (-1);
-	ft_bzero(str_filter, 20 + INET_ADDRSTRLEN + 6);
-	ft_strcat(str_filter, "src host ");
+	ft_bzero(str_filter, 46 + 2 * INET_ADDRSTRLEN + 6);
+
+	if (scan == 64)
+		ft_strcat(str_filter, "udp and src host ");
+	else
+		ft_strcat(str_filter, "tcp and src host ");
 	inet_ntop(AF_INET, &addr->sin_addr, str_addr, INET_ADDRSTRLEN);
 	ft_strcat(str_filter, str_addr);
+	
+	ft_strcat(str_filter, " and dst host ");
+	ft_strcat(str_filter, opt->localhost);
+	
 	str_port = ft_itoa(port);
-	ft_strcat(str_filter, " and port ");
+	ft_strcat(str_filter, " and src port ");
 	ft_strcat(str_filter, str_port);
+	
 	//printf("listening %s\n", str_filter);
+	
 	if (nmap_pcapsetup(opt, sock_id, str_filter) == -1)
 		return (-1);
 	if ((args = (t_probe_arg*)malloc(sizeof(t_probe_arg))) == NULL)
@@ -138,7 +151,11 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	}
 	args->logfile = opt->logfile;
 	args->lock = opt->lock;
+	args->port = port;
+	args->scan = scan;
+	printf("start dispatch\n");
 	pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)args);
+	printf("end dispatch\n");
 	free(str_port);
 	free(str_filter);
 	free(args);
@@ -150,8 +167,7 @@ void	*probe(void *vargs)
 	t_thread_arg *args = (t_thread_arg *)vargs;
 
 	send_probe(args->opt, args->ip, args->port, args->scan, args->opt->sockets[args->sock_id]->sock_fd);
-	if (wait_response(args->opt, args->sock_id, args->ip, args->port))
-		return (NULL);
+	wait_response(args->opt, args->sock_id, args->ip, args->port, args->scan);
 	args->opt->sockets[args->sock_id]->available = 1;
 	pcap_close(args->opt->sockets[args->sock_id]->handle);
 	pcap_freecode(&(args->opt->sockets[args->sock_id]->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
@@ -186,7 +202,7 @@ static int	nmap_sender(t_opt *opt)
 		tmp_ips = opt->ips;
 		tmp_port = opt->ports;
 		if (scan & opt->scanflag)
-		{	printf("%d, opt->scanflags %d\n", scan, opt->scanflag);
+		{
 			// open sockets and create threads
 			if (scan == 128)
 				proto = IPPROTO_UDP;
@@ -209,9 +225,9 @@ static int	nmap_sender(t_opt *opt)
 				while (tmp_port)
 				{
 					while (1)
-					{
+					{//printf("try %d\n", *(int *)(tmp_port->content));
 						if (opt->sockets[sock_id]->available == 1)
-						{
+						{//printf("sending to %d\n", *(int *)(tmp_port->content));
 							t_thread_arg *args;
 
 							if ((args = (t_thread_arg *)malloc(sizeof(t_thread_arg))) == NULL)
@@ -242,6 +258,7 @@ static int	nmap_sender(t_opt *opt)
 			// clean sockets
 			for (int i = 0; i < opt->threads; i++)
 			{
+				//printf("Wait threads end\n");
 				pthread_join(*(opt->sockets[i]->thread), NULL);
 				free(opt->sockets[i]->thread);
 				close(opt->sockets[i]->sock_fd);

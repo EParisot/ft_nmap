@@ -21,7 +21,7 @@ static void null_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, struct in_
 	iph->ttl = 64;
 	iph->protocol = IPPROTO_TCP;
 	iph->check = 0;
-	iph->saddr = inet_addr(getlocalhost(opt));
+	iph->saddr = inet_addr(opt->localhost);
 	iph->daddr = dest_ip.s_addr;
     iph->check = csum((unsigned short *) datagram, iph->tot_len >> 1);
 }
@@ -68,7 +68,7 @@ static struct sockaddr_in probe_fillnullpacket(t_opt *opt, int sock, char **pkt,
 	dest.sin_addr.s_addr = dest_ip.s_addr;
     tcph->dest = htons(port);
 	tcph->check = 0;	
-    psh.source_address = inet_addr(getlocalhost(opt));
+    psh.source_address = inet_addr(opt->localhost);
 	psh.dest_address = dest.sin_addr.s_addr;
 	psh.placeholder = 0;
 	psh.protocol = IPPROTO_TCP;

@@ -1,6 +1,6 @@
 #include "../includes/ft_nmap.h"
 
-typedef struct __attribute__((packed)) s_psh
+typedef struct s_psh
 {
 	u_int32_t source_address;
 	u_int32_t dest_address;
@@ -79,15 +79,11 @@ static struct sockaddr_in probe_fillsynpacket(t_opt *opt, int sock, char **pkt, 
 
 int scan_syn(t_opt *opt, int sock, char *addr, int port)
 {
-    int ret;
-	unsigned short hl;
     struct timeval tv;
     char    pkt[4096];
-	char	rcpkt[4096];
     char *tmp = pkt;
     struct sockaddr_in dest;
 
-    ret = -1;
     tv.tv_sec = 5;
     tv.tv_usec = 0;
     if(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv)) < 0)
@@ -106,18 +102,5 @@ int scan_syn(t_opt *opt, int sock, char *addr, int port)
 		printf ("Error sending syn packet.\n");
 		return -1;
 	}
-	ft_bzero(&rcpkt, sizeof(rcpkt));
-	if ((ret = recvfrom(sock, rcpkt, 4096, 0, NULL, NULL)) > 0)
-	{
-		struct iphdr* iph = (struct iphdr*)rcpkt;
-		hl = iph->ihl * 4;
-		struct tcphdr *tcp = (struct tcphdr*)(rcpkt + hl);
-		if (tcp->th_flags & TH_RST)
-			printf("SYN port %d is closed\n", port);
-		else if (tcp->th_flags & TH_SYN || tcp->th_flags & TH_ACK)
-			printf("SYN port %d is open\n", port);
-	}
-	else
-		printf("SYN port %d is filtered\n", port);
-    return ret;
+	return (0);
 }

@@ -85,6 +85,8 @@ typedef struct	s_probe_arg
 {
 	FILE			*logfile;
 	pthread_mutex_t	*lock;
+	int				port;
+	uint8_t			scan;
 }				t_probe_arg;
 
 
