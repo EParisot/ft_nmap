@@ -312,7 +312,7 @@ static int		set_defaults(t_opt *options)
 	else if (nb_to_scan < options->threads)
 		options->threads = nb_to_scan;
 	if (options->scanflag == 0)
-		options->scanflag = 0xff; // 0xff when all flags active
+		options->scanflag = 0x7f; // 0xff when all flags active
 	return (0);
 }
 

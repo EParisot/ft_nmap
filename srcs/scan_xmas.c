@@ -18,7 +18,7 @@ static void xmas_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, char *addr
 	iph->tot_len = sizeof (struct ip) + sizeof (struct tcphdr);
 	iph->id = htons(0);
 	iph->frag_off = htons(16384);
-	iph->ttl = 64;
+	iph->ttl = 255;
 	iph->protocol = IPPROTO_TCP;
 	iph->check = 0;
 	iph->saddr = inet_addr(opt->localhost);
@@ -28,9 +28,9 @@ static void xmas_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, char *addr
 
 static void xmas_tcphdr(struct tcphdr* tcph)
 {
-    tcph->source = htons(9999);
+    tcph->source = htons(9998);
 	tcph->dest = htons(80);
-	tcph->seq = htonl(1105024978);
+	tcph->seq = htonl(1105024979);
 	tcph->ack_seq = 0;
 	tcph->doff = sizeof(struct tcphdr) / 4;
 	tcph->fin=1;
@@ -97,7 +97,7 @@ int scan_xmas(t_opt *opt, int sock, char *addr, int port)
         printf("ft_nmap: timeout recv probe\n");
         return -1;
     }
-    if (sendto(sock, pkt, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr *)&dest, sizeof(dest)) < 0)
+    if (sendto(sock, pkt, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr*)&dest, sizeof(dest)) < 0)
 	{
 		printf ("Error sending xmas packet.\n");
 		return -1;

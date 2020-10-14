@@ -80,13 +80,11 @@ static struct sockaddr_in probe_fillfinpacket(t_opt *opt, int sock, char **pkt, 
 
 int scan_fin(t_opt *opt, int sock, char *addr, int port)
 {
-    int ret;
     struct timeval tv;
     char    pkt[4096];
     char *tmp = pkt;
     struct sockaddr_in dest;
 
-    ret = -1;
     tv.tv_sec = 5;
     tv.tv_usec = 0;
     if(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv)) < 0)
@@ -105,5 +103,5 @@ int scan_fin(t_opt *opt, int sock, char *addr, int port)
 		printf ("Error sending fin packet.\n");
 		return -1;
 	}
-    return ret;
+    return 0;
 }
