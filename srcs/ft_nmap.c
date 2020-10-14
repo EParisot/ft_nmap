@@ -17,18 +17,20 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 	FILE 				*logfile = (FILE *)(((t_probe_arg*)args)->logfile);
 	int					port = (int)(((t_probe_arg*)args)->port);
 	uint8_t				scan = (uint8_t)(((t_probe_arg*)args)->scan);
+	pthread_mutex_t		*lock = (pthread_mutex_t*)(((t_probe_arg*)args)->lock);
 	int					str_len = 64;
 	char				str[str_len];
 	int 				buf_len = 1024;
 	char				buf[1024];
 
-	(void)header;
-	ft_bzero(buf, buf_len);
 	const struct ether_header* ethh;
     const struct ip* iph;
     const struct tcphdr* tcph;
     //const struct udphdr* udph;
 	ethh = (struct ether_header*)packet;
+
+	(void)header;
+	ft_bzero(buf, buf_len);
 	ft_bzero(str, str_len);
 	sprintf(str, "%d in handler %d\n", scan, port);
     ft_strcat(buf, str);
@@ -68,10 +70,12 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
             //udph = (struct tcphdr*)(packet + sizeof(struct ether_header) + sizeof(struct ip));
 		}
 	}
+	pthread_mutex_lock(lock);
     ft_strcat(buf, "------------------------\n");
 	if (logfile)
 		fwrite(buf, ft_strlen(buf), 1, logfile);
 	printf("%s", buf);
+	pthread_mutex_unlock(lock);
 }
 
 static t_device *init_ndevice()
@@ -163,9 +167,10 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	args->port = port;
 	args->scan = scan;
 	//pcap_setnonblock(opt->sockets[sock_id]->handle, 1, NULL);
-  printf("start %d\n", port);
-	pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)args);
-  printf("end %d\n", port);
+  	printf("start %d\n", port);
+	int ret = pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)args);
+  	printf("dispatch ret = %d\n", ret);
+	printf("end %d\n", port);
 	/*gettimeofday(&start, NULL);
 	while (1)
 	{
@@ -204,7 +209,7 @@ void		sig_handler(int num_sig)
 {
 	if (num_sig == SIGINT)
 	{
-		printf("SIGINT, waiting for timeouts to finish...\n");
+		printf("SIGINT, waiting for running probes to finish...\n");
 		g_stop = true;
 	}
 	return ;
