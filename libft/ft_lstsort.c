@@ -25,17 +25,6 @@ static size_t	ft_count(t_list *lst)
 	return (count);
 }
 
-static size_t	bigger(t_list *lst, t_list *next)
-{
-	unsigned int	bigger_size;
-
-	if (lst->content_size >= next->content_size)
-		bigger_size = lst->content_size;
-	else
-		bigger_size = next->content_size;
-	return (bigger_size);
-}
-
 static void		ft_lstswap(void *mem, unsigned int mem_size, t_list *lst, \
 							t_list *next)
 {
@@ -47,7 +36,7 @@ static void		ft_lstswap(void *mem, unsigned int mem_size, t_list *lst, \
 	next->content_size = mem_size;
 }
 
-void			ft_lstsort(t_list *lst)
+void			ft_lstsort(t_list *lst, int (ft_cmp)(void *, void *))
 {
 	t_list			*first;
 	t_list			*next;
@@ -64,7 +53,7 @@ void			ft_lstsort(t_list *lst)
 	{
 		while (lst->next)
 		{
-			if (ft_memcmp(lst->content, next->content, bigger(lst, next)) > 0)
+			if (ft_cmp(lst->content, next->content) < 0)
 			{
 				ft_lstswap(mem, mem_size, lst, next);
 			}

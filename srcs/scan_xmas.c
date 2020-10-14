@@ -10,7 +10,7 @@ typedef struct s_psh
     struct tcphdr tcp;
 }               t_psh;
 
-static void xmas_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, struct in_addr dest_ip)
+static void xmas_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, char *addr)
 {
     iph->ihl = 5;
 	iph->version = 4;
@@ -21,8 +21,8 @@ static void xmas_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, struct in_
 	iph->ttl = 64;
 	iph->protocol = IPPROTO_TCP;
 	iph->check = 0;
-	iph->saddr = inet_addr(getlocalhost(opt));
-	iph->daddr = dest_ip.s_addr;
+	iph->saddr = inet_addr(opt->localhost);
+	iph->daddr = inet_addr(addr);
     iph->check = csum((unsigned short *) datagram, iph->tot_len >> 1);
 }
 
@@ -52,41 +52,38 @@ static struct sockaddr_in probe_fillxmaspacket(t_opt *opt, int sock, char **pkt,
 	const int *val = &one;
     struct tcphdr   *tcph;
 	struct sockaddr_in  dest;
-    struct in_addr dest_ip;
     t_psh   psh;
 
+	ft_bzero(&dest, sizeof(struct sockaddr_in));
     tcph = (struct tcphdr *)(datagram + sizeof(struct ip));
-    dest_ip.s_addr = inet_addr(addr);
     ft_memset(datagram, 0, 4096);
-    xmas_iphdr(opt, (struct iphdr *)datagram, datagram, dest_ip);
+    xmas_iphdr(opt, (struct iphdr *)datagram, datagram, addr);
     xmas_tcphdr((struct tcphdr *)(datagram + sizeof(struct ip)));
 	if (setsockopt(sock, IPPROTO_IP, IP_HDRINCL, val, sizeof (one)) < 0)
 	{
 		printf ("Error setting IP_HDRINCL. \n");
 	}
 	dest.sin_family = AF_INET;
-	dest.sin_addr.s_addr = dest_ip.s_addr;
+	dest.sin_addr.s_addr = inet_addr(addr);
     tcph->dest = htons(port);
-	tcph->check = 0;	
-    psh.source_address = inet_addr(getlocalhost(opt));
+	tcph->check = 0;
+    psh.source_address = inet_addr(opt->localhost);
 	psh.dest_address = dest.sin_addr.s_addr;
 	psh.placeholder = 0;
 	psh.protocol = IPPROTO_TCP;
 	psh.tcp_length = htons(sizeof(struct tcphdr));
 	ft_memcpy(&psh.tcp, tcph, sizeof(struct tcphdr));
 	tcph->check = csum((unsigned short*)&psh, sizeof(t_psh));
-    return dest;
+    return (dest);
 }
 
 int scan_xmas(t_opt *opt, int sock, char *addr, int port)
 {
-    int ret;
     struct timeval tv;
     char    pkt[4096];
     char *tmp = pkt;
     struct sockaddr_in dest;
 
-    ret = -1;
     tv.tv_sec = 5;
     tv.tv_usec = 0;
     if(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv)) < 0)
@@ -94,12 +91,16 @@ int scan_xmas(t_opt *opt, int sock, char *addr, int port)
         printf("ft_nmap: timeout sending probe\n");
         return -1;
     }
-    dest = probe_fillxmaspacket(opt, sock, &tmp, addr, port);
-    printf("sending packet\n");
+	dest = probe_fillxmaspacket(opt, sock, &tmp, addr, port);
+	if(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv)) < 0)
+    {
+        printf("ft_nmap: timeout recv probe\n");
+        return -1;
+    }
     if (sendto(sock, pkt, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr *)&dest, sizeof(dest)) < 0)
 	{
 		printf ("Error sending xmas packet.\n");
 		return -1;
 	}
-    return ret;
+    return (0);
 }

@@ -14,14 +14,15 @@ static void	remove_doublons(t_list *ports)
 
 	while (tmp_lst)
 	{
-		if (*(int *)tmp_lst->content > last_val)
-		{
+		//printf("port : %d\n", *(int *)(tmp_lst->content));
+		if (*(int *)(tmp_lst->content) > last_val)
+		{//printf("ok\n");
 			last_val = *(int *)tmp_lst->content;
 			last_port = tmp_lst;
 			tmp_lst = tmp_lst->next;
 		}
 		else
-		{
+		{//printf("doublon\n");
 			last_port->next = tmp_lst->next;
 			ft_lstdelone(&tmp_lst, del);
 			tmp_lst = last_port->next;
@@ -159,9 +160,15 @@ static int	read_ipaddr(t_opt *options, char *const args[], int *optind)
 
 static int	read_speedup(t_opt *options, char *const args[], int *optind)
 {
+	int threads_nb = 0;
+
 	if (args[*optind + 1] == NULL)
 		return (retmsg("ft_nmap: error: missing argument near %s\n", "--speedup", -1));
-	options->threads = ft_atoi(args[*optind + 1]);
+	threads_nb = ft_atoi(args[*optind + 1]);
+	if (threads_nb <= 250)
+		options->threads = threads_nb;
+	else
+		options->threads = 250;
 	(*optind)++;
 	return (0);
 }
@@ -175,12 +182,15 @@ static int	append_scantype(t_opt *options, char *type)
 	for (size_t i = 0; i < 6; i++)
 	{
 		if (!ft_strcmp(typelist[i], type))
+		{
 			options->scanflag += (1 << (i + 1));
+			return (0);
+		}
 	}
-	return (0);
+	return (-1);
 }
 
-int		read_scantypes(t_opt *options, char *const args[], int *optind)
+static int	read_scantypes(t_opt *options, char *const args[], int *optind)
 {
 	char	**flags;
 	int		ret = 0;
@@ -192,14 +202,52 @@ int		read_scantypes(t_opt *options, char *const args[], int *optind)
 	for (size_t i = 0; i < ft_tablen(flags); i++)
 	{
 		ret = append_scantype(options, flags[i]);
-		if (ret)
+		if (ret || ret == -1)
+		{
+			if (ret == -1)
+				return (retmsg("ft_nmap: error with scantype: %s\n", flags[i], -1));
 			break;
+		}
 	}
 	for (size_t i = 0; flags[i]; i++)
 		free(flags[i]);
 	free(flags);
 	(*optind)++;
 	return (0);
+}
+
+static int	fread_logfile(t_opt *options, int nargs, char *const args[], int *optind)
+{
+	// try to open logfile if exists, or creates one if not
+	FILE				*fp;
+	int					ret;
+
+	ret = 0;
+	if (args[*optind + 1] == NULL)
+		return (retmsg("ft_nmap: error: missing argument near %s\n", "--log", -1));
+	// check if file exists
+	if ((fp = fopen(args[*optind + 1], "r")) == NULL)
+	{
+		if ((fp = fopen(args[*optind + 1], "w")) == NULL)
+			return (retmsg("ft_nmap: error: cannot create %s file\n", "--log", -1));
+		options->logfile = fp;
+		for (int i = 0; i < nargs; i++)
+		{
+			fwrite(args[i], ft_strlen(args[i]), 1, options->logfile);
+			fwrite(" ", 1, 1, options->logfile);
+		}
+		fwrite("\n", 1, 1, options->logfile);
+	}
+	else
+	{
+		// TODO read file content, restart parsing and avoid already done scans
+		fclose(fp);
+		if ((fp = fopen(args[*optind + 1], "a")) == NULL)
+			return (retmsg("ft_nmap: error: cannot create %s file\n", "--log", -1));
+		options->logfile = fp;
+	}
+	(*optind)++;
+	return (ret);
 }
 
 static char    nmap_getopt(int nargs, char *const args[], int *optind)
@@ -228,7 +276,16 @@ static char    nmap_getopt(int nargs, char *const args[], int *optind)
     {
         return 's';
     }
+	else if (!ft_strcmp("--log", args[*optind]) && *optind + 1 < nargs)
+	{
+		return 'l';
+	}
 	return 'h';
+}
+
+int				ft_cmp(void *a, void *b)
+{
+	return (*(int*)b - *(int*)a);
 }
 
 static int		set_defaults(t_opt *options)
@@ -247,7 +304,7 @@ static int		set_defaults(t_opt *options)
 	if (options->ports == NULL)
 		if (append_range(options, dft_ports))
 			return (-1);
-	ft_lstsort(options->ports);
+	ft_lstsort(options->ports, ft_cmp);
 	remove_doublons(options->ports);
 	nb_to_scan = ft_lstcount(options->ips) * ft_lstcount(options->ports);
 	if (options->threads == 0)
@@ -318,6 +375,9 @@ int     nmap_optloop(t_opt *options, int nargs, char *const args[])
 			break;
             case 's':
             	ret = read_scantypes(options, args, &optind);
+			break;
+			case 'l':
+				ret = fread_logfile(options, nargs, args, &optind);
 			break;
 			if (ret)
 				return (-1);

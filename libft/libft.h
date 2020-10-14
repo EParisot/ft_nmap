@@ -97,7 +97,7 @@ void				ft_lstiter(t_list *lst, void (*f)(t_list *elem));
 t_list				*ft_lstmap(t_list *lst, t_list *(*f)(t_list *elem));
 
 void				ft_lstaddend(t_list **alst, t_list *new);
-void				ft_lstsort(t_list *lst);
+void				ft_lstsort(t_list *lst, int (ft_cmp)(void*, void*));
 size_t				ft_lstcount(t_list *lst);
 int					ft_lstmax(t_list *lst);
 int					ft_lstmin(t_list *lst);
