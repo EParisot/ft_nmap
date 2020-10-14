@@ -122,10 +122,14 @@ static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* const filter)
 
 static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int port, uint8_t scan)
 {
-	char		str_addr[INET_ADDRSTRLEN];
-	char		*str_port;
-	char		*str_filter;
-	t_probe_arg	*args;
+	char			str_addr[INET_ADDRSTRLEN];
+	char			*str_port;
+	char			*str_filter;
+	t_probe_arg		*args;
+	//struct timeval	start;
+	//struct timeval	curr;
+	//int				str_len = 64;
+	//char			str[str_len];
 
 	ft_bzero(str_addr, INET_ADDRSTRLEN);
 	if ((str_filter = (char *)malloc(46 + 2 * INET_ADDRSTRLEN + 6)) == NULL)
@@ -158,10 +162,26 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	args->lock = opt->lock;
 	args->port = port;
 	args->scan = scan;
-	printf("start %d\n", port);
+	//pcap_setnonblock(opt->sockets[sock_id]->handle, 1, NULL);
+  printf("start %d\n", port);
 	pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)args);
-	printf("end %d\n", port);
-	//free(str_port);
+  printf("end %d\n", port);
+	/*gettimeofday(&start, NULL);
+	while (1)
+	{
+		gettimeofday(&curr, NULL);
+		if ((curr.tv_sec - start.tv_sec) * 1000000 > 1)
+		{
+			pcap_breakloop(opt->sockets[sock_id]->handle);
+			ft_bzero(str, str_len);
+			sprintf(str, "Probe Timeout on port %d with %d scan\n", port, scan);
+			if (opt->logfile)
+				fwrite(str, 1, 1, opt->logfile);
+			printf("%s", str);
+			break;
+		}
+	}*/
+	free(str_port);
 	free(str_filter);
 	free(args);
 	return (0);
@@ -180,6 +200,16 @@ void	*probe(void *vargs)
 	return (NULL);
 }
 
+void		sig_handler(int num_sig)
+{
+	if (num_sig == SIGINT)
+	{
+		printf("SIGINT, waiting for timeouts to finish...\n");
+		g_stop = true;
+	}
+	return ;
+}
+
 static int	nmap_sender(t_opt *opt)
 {
 	t_list	*tmp_ips;
@@ -187,6 +217,8 @@ static int	nmap_sender(t_opt *opt)
 	int 	sock_id = 0;
 	int		proto = IPPROTO_TCP;
 
+	g_stop = false;
+	signal(SIGINT, sig_handler);
 	if ((opt->lock = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t))) == NULL)
 	{
 		printf("ft_nmap: Error mutex malloc failed\n");
@@ -202,7 +234,7 @@ static int	nmap_sender(t_opt *opt)
 		return (-1);
 
 	// nmap loop
-	for (int scan = (1 << 1); scan < 0xFF; scan = scan << 1)
+	for (int scan = (1 << 1); scan <= 0xFF && g_stop == false; scan = scan << 1)
 	{
 		tmp_ips = opt->ips;
 		tmp_port = opt->ports;
@@ -211,7 +243,7 @@ static int	nmap_sender(t_opt *opt)
 			// open sockets and create threads
 			if (scan == 64)
 				proto = IPPROTO_UDP;
-			for (int i = 0; i < opt->threads; i++)
+			for (int i = 0; i < opt->threads && g_stop == false; i++)
 			{
 				if ((opt->sockets[i] = (t_socket *)malloc(sizeof(t_socket))) == NULL)
 					return (-1);
@@ -225,11 +257,11 @@ static int	nmap_sender(t_opt *opt)
 					return (-1);
 			}
 			// loop over ip / ports
-			while (tmp_ips)
+			while (tmp_ips && g_stop == false)
 			{
-				while (tmp_port)
+				while (tmp_port && g_stop == false)
 				{
-					while (1)
+					while (g_stop == false)
 					{//printf("try %d\n", *(int *)(tmp_port->content));
 						if (opt->sockets[sock_id]->available == 1)
 						{//printf("sending to %d\n", *(int *)(tmp_port->content));

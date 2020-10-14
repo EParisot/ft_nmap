@@ -23,6 +23,7 @@
 # include <pcap.h> // for PCAP_ERRBUF_SIZE
 // also using -D_GNU_SOURCE for all types in pcap.h that were cancelled by the POSIC_C_SOURCE preproc
 # include <arpa/inet.h> // for inet_pton()
+#include <stdbool.h>
 # include <net/ethernet.h> // for ETHERTYPE macros
 # include <unistd.h> // for geteuid
 # include <sys/types.h> // for geteuid
@@ -31,8 +32,11 @@
 # include <netinet/ip.h> // for iphdr struct
 # include <netinet/tcp.h> // for tcphdr struct
 #include<netinet/udp.h>
+# include <signal.h>
 # include<string.h>
 # include<sys/socket.h>
+
+bool g_stop;
 
 typedef struct          s_device
 {
