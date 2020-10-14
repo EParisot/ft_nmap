@@ -54,7 +54,7 @@ static struct sockaddr_in probe_filludppacket(char **pkt, char *addr, int port)
     iph->version = 4;
     iph->tos = 0;
     iph->tot_len = sizeof (struct iphdr) + sizeof (struct udphdr);
-    iph->id = htonl(0); //Id of this packet
+    iph->id = htonl(9999); //Id of this packet
     iph->frag_off = 0;
     iph->ttl = 255;
     iph->protocol = IPPROTO_UDP;
@@ -64,8 +64,8 @@ static struct sockaddr_in probe_filludppacket(char **pkt, char *addr, int port)
     //Ip checksum
     iph->check = csum((unsigned short *) datagram, iph->tot_len);
     //UDP header
-    udph->source = htons(6666);
-    udph->dest = htons(8622);
+    udph->source = htons(9999);
+    udph->dest = htons(port);
     udph->len = htons(8); //tcp header size
     udph->check = 0; //leave checksum 0 now, filled later by pseudo header
      

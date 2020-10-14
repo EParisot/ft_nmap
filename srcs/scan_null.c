@@ -81,10 +81,8 @@ static struct sockaddr_in probe_fillnullpacket(t_opt *opt, int sock, char **pkt,
 int scan_null(t_opt *opt, int sock, char *addr, int port)
 {
     int ret;
-	unsigned short hl;
     struct timeval tv;
     char    pkt[4096];
-	char	rcpkt[4096];
     char *tmp = pkt;
     struct sockaddr_in dest;
 
@@ -107,19 +105,5 @@ int scan_null(t_opt *opt, int sock, char *addr, int port)
 		printf ("Error sending null packet.\n");
 		return -1;
 	}
-	ft_bzero(&rcpkt, sizeof(rcpkt));
-	if ((ret = recvfrom(sock, rcpkt, sizeof(rcpkt), 0, NULL, NULL)) > 0)
-	{
-		struct iphdr* iph = (struct iphdr*)rcpkt;
-		hl = iph->ihl * 4;
-		struct tcphdr *tcp = (struct tcphdr*)(rcpkt + hl);
-		if (tcp->th_flags & 0x04)
-			printf("NULL port %d is closed\n", port);
-		else
-			printf("NULL port %d is maybe filtered\n", port);
-		// missing icmp errr to mark as filtered
-	}
-	else
-		printf("NULL port %d is open|filtered\n", port);
     return ret;
 }

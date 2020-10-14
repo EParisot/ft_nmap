@@ -182,9 +182,12 @@ static int	append_scantype(t_opt *options, char *type)
 	for (size_t i = 0; i < 6; i++)
 	{
 		if (!ft_strcmp(typelist[i], type))
+		{
 			options->scanflag += (1 << (i + 1));
+			return (0);
+		}
 	}
-	return (0);
+	return (-1);
 }
 
 static int	read_scantypes(t_opt *options, char *const args[], int *optind)
@@ -199,8 +202,12 @@ static int	read_scantypes(t_opt *options, char *const args[], int *optind)
 	for (size_t i = 0; i < ft_tablen(flags); i++)
 	{
 		ret = append_scantype(options, flags[i]);
-		if (ret)
+		if (ret || ret == -1)
+		{
+			if (ret == -1)
+				return (retmsg("ft_nmap: error with scantype: %s\n", flags[i], -1));
 			break;
+		}
 	}
 	for (size_t i = 0; flags[i]; i++)
 		free(flags[i]);

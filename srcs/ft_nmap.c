@@ -14,60 +14,59 @@
 
 static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *header, const uint8_t *packet)
 {
-    // traitement des paquets, pour l'instant je test
-    // en affichant juste le type de paquet
 	FILE 				*logfile = (FILE *)(((t_probe_arg*)args)->logfile);
-	pthread_mutex_t		*lock = (pthread_mutex_t *)(((t_probe_arg*)args)->lock);
-	//int					port = (int)(((t_probe_arg*)args)->port);
-	//uint8_t				scan = (uint8_t)(((t_probe_arg*)args)->scan);
-    struct 				ether_header *eth_header;
+	int					port = (int)(((t_probe_arg*)args)->port);
+	uint8_t				scan = (uint8_t)(((t_probe_arg*)args)->scan);
 	int					str_len = 64;
 	char				str[str_len];
 	int 				buf_len = 1024;
-	char				buf[buf_len];
-
-    eth_header = (struct ether_header *)packet;
+	char				*buf = (char*)malloc(buf_len);
 	ft_bzero(buf, buf_len);	
 	ft_strcat(buf, "------------------------\n");
-    if (ntohs(eth_header->ether_type) != ETHERTYPE_IP)
-	{
-        ft_strcat(buf, "Not an IP packet. Skipping...\n\n");
-        return;
-    }
-    /* The total packet length, including all headers
-       and the data payload is stored in
-       header->len and header->caplen. Caplen is
-       the amount actually available, and len is the
-       total packet length even if it is larger
-       than what we currently have captured. If the snapshot
-       length set with pcap_open_live() is too small, you may
-       not have the whole packet. */
 
 	ft_bzero(str, str_len);
 	sprintf(str, "Total packet available: %d bytes\n", header->caplen);
     ft_strcat(buf, str);
-	ft_bzero(str, str_len);
-	sprintf(str, "Expected packet size: %d bytes\n", header->len);
-    ft_strcat(buf, str);
 
-    /* Pointers to start point of various headers */
-    const u_char *ip_header;
-
-    /* Header lengths in bytes */
-
-    ip_header = packet + 14;
-    u_char protocol = *(ip_header + 9);
-    if (protocol == IPPROTO_TCP) 
-		ft_strcat(buf, "TCP Packet\n");
-	else if (protocol == IPPROTO_UDP)
-		ft_strcat(buf, "UDP Packet\n");
-
+	const struct ether_header* ethh;
+    const struct ip* iph;
+    const struct tcphdr* tcph;
+    //const struct udphdr* udph;
+	ethh = (struct ether_header*)packet;
+    if (ntohs(ethh->ether_type) == ETHERTYPE_IP)
+	{
+		iph = (struct ip*)(packet + sizeof(struct ether_header));
+		if (iph->ip_p == IPPROTO_TCP)
+		{
+			ft_bzero(str, str_len);
+			sprintf(str, "%d TCP packet: %d\n", scan, port);
+    		ft_strcat(buf, str);
+            tcph = (struct tcphdr*)(packet + sizeof(struct ether_header) + sizeof(struct ip));
+			if (tcph->th_flags & TH_SYN)
+			{
+					ft_bzero(str, str_len);
+					sprintf(str, "SYN: %d\n", port);
+    				ft_strcat(buf, str);
+			}
+			else if (tcph->th_flags & TH_RST)
+			{
+					ft_bzero(str, str_len);
+					sprintf(str, "RST: %d\n", port);
+    				ft_strcat(buf, str);
+			}
+		}
+		else if (iph->ip_p == IPPROTO_UDP)
+		{
+			ft_bzero(str, str_len);
+			sprintf(str, "UDP packet: %d\n", port);
+    		ft_strcat(buf, str);
+            //udph = (struct tcphdr*)(packet + sizeof(struct ether_header) + sizeof(struct ip));
+		}
+	}
     ft_strcat(buf, "------------------------\n");
-	pthread_mutex_lock(lock);
 	if (logfile)
 		fwrite(buf, ft_strlen(buf), 1, logfile);
 	printf("%s", buf);
-	pthread_mutex_unlock(lock);
 }
 
 static t_device *init_ndevice()
@@ -101,6 +100,7 @@ static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* const filter)
         fprintf(stderr, "ft_nmap: Cannot open interface %s", opt->dev->device);
         return (-1);
     }
+	pthread_mutex_lock(opt->lock);
     if (pcap_compile(opt->sockets[sock_id]->handle, &(opt->sockets[sock_id]->filter), filter, 0, opt->dev->ip) == -1)
     {
         printf("ft_nmap: Bad filter - %s\n", pcap_geterr(opt->sockets[sock_id]->handle));
@@ -111,6 +111,7 @@ static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* const filter)
         printf("ft_nmap: Error setting filter - %s\n", pcap_geterr(opt->sockets[sock_id]->handle));
         return (-1);
     }
+	pthread_mutex_unlock(opt->lock);
     return (1);
 }
 
@@ -126,7 +127,7 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 		return (-1);
 	ft_bzero(str_filter, 46 + 2 * INET_ADDRSTRLEN + 6);
 
-	if (scan == 64)
+	if (scan == 128)
 		ft_strcat(str_filter, "udp and src host ");
 	else
 		ft_strcat(str_filter, "tcp and src host ");
@@ -140,8 +141,7 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	ft_strcat(str_filter, " and src port ");
 	ft_strcat(str_filter, str_port);
 	
-	//printf("listening %s\n", str_filter);
-	
+	printf("%d: listening %s\n", scan, str_filter);
 	if (nmap_pcapsetup(opt, sock_id, str_filter) == -1)
 		return (-1);
 	if ((args = (t_probe_arg*)malloc(sizeof(t_probe_arg))) == NULL)
@@ -153,9 +153,7 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	args->lock = opt->lock;
 	args->port = port;
 	args->scan = scan;
-	printf("start dispatch\n");
 	pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)args);
-	printf("end dispatch\n");
 	free(str_port);
 	free(str_filter);
 	free(args);
@@ -197,7 +195,7 @@ static int	nmap_sender(t_opt *opt)
 		return (-1);
 
 	// nmap loop
-	for (int scan = 2; scan <= 0x7F; scan = scan << 1)
+	for (int scan = (1 << 1); scan <= 0xFF; scan = scan << 1)
 	{
 		tmp_ips = opt->ips;
 		tmp_port = opt->ports;

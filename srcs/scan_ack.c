@@ -81,11 +81,9 @@ static struct sockaddr_in probe_fillackpacket(t_opt *opt, int sock, char **pkt, 
 int scan_ack(t_opt *opt, int sock, char *addr, int port)
 {
     int ret;
-	unsigned short hl;
     struct timeval tv;
     char    pkt[4096];
     char *tmp = pkt;
-	char rcpkt[4096];
     struct sockaddr_in dest;
 
     ret = -1;
@@ -107,18 +105,5 @@ int scan_ack(t_opt *opt, int sock, char *addr, int port)
 		printf ("Error sending ack packet.\n");
 		return -1;
 	}
-	ft_bzero(&rcpkt, sizeof(rcpkt));
-	if (recvfrom(sock, rcpkt, sizeof(rcpkt), 0, NULL, NULL) > 0)
-	{
-		struct iphdr* iph = (struct iphdr*)rcpkt;
-		hl = iph->ihl * 4;
-		struct tcphdr *tcp = (struct tcphdr*)(rcpkt + hl);
-		if (tcp->th_flags & 4)
-			printf("ACK port %d is non-filtered\n", port);
-		else
-			printf("ACK port %d is open|filtered\n", port);
-	}
-	else
-		printf("ACK port %d is filtered\n", port);
     return ret;
 }
