@@ -18,7 +18,7 @@ static void syn_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, char *addr)
 	iph->tot_len = sizeof (struct ip) + sizeof (struct tcphdr);
 	iph->id = htons(0);
 	iph->frag_off = htons(16384);
-	iph->ttl = 64;
+	iph->ttl = 255;
 	iph->protocol = IPPROTO_TCP;
 	iph->check = 0;
 	iph->saddr = inet_addr(opt->localhost);

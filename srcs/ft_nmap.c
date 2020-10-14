@@ -20,19 +20,18 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 	int					str_len = 64;
 	char				str[str_len];
 	int 				buf_len = 1024;
-	char				*buf = (char*)malloc(buf_len);
-	ft_bzero(buf, buf_len);	
-	ft_strcat(buf, "------------------------\n");
+	char				buf[1024];
 
-	ft_bzero(str, str_len);
-	sprintf(str, "Total packet available: %d bytes\n", header->caplen);
-    ft_strcat(buf, str);
-
+	(void)header;
+	ft_bzero(buf, buf_len);
 	const struct ether_header* ethh;
     const struct ip* iph;
     const struct tcphdr* tcph;
     //const struct udphdr* udph;
 	ethh = (struct ether_header*)packet;
+	ft_bzero(str, str_len);
+	sprintf(str, "%d in handler %d\n", scan, port);
+    ft_strcat(buf, str);
     if (ntohs(ethh->ether_type) == ETHERTYPE_IP)
 	{
 		iph = (struct ip*)(packet + sizeof(struct ether_header));
@@ -52,6 +51,12 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 			{
 					ft_bzero(str, str_len);
 					sprintf(str, "RST: %d\n", port);
+    				ft_strcat(buf, str);
+			}
+			else if (tcph->th_flags & TH_ACK)
+			{
+					ft_bzero(str, str_len);
+					sprintf(str, "ACK: %d\n", port);
     				ft_strcat(buf, str);
 			}
 		}
@@ -127,7 +132,7 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 		return (-1);
 	ft_bzero(str_filter, 46 + 2 * INET_ADDRSTRLEN + 6);
 
-	if (scan == 128)
+	if (scan == 64)
 		ft_strcat(str_filter, "udp and src host ");
 	else
 		ft_strcat(str_filter, "tcp and src host ");
@@ -153,8 +158,10 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	args->lock = opt->lock;
 	args->port = port;
 	args->scan = scan;
+	printf("start %d\n", port);
 	pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)args);
-	free(str_port);
+	printf("end %d\n", port);
+	//free(str_port);
 	free(str_filter);
 	free(args);
 	return (0);
@@ -195,20 +202,20 @@ static int	nmap_sender(t_opt *opt)
 		return (-1);
 
 	// nmap loop
-	for (int scan = (1 << 1); scan <= 0xFF; scan = scan << 1)
+	for (int scan = (1 << 1); scan < 0xFF; scan = scan << 1)
 	{
 		tmp_ips = opt->ips;
 		tmp_port = opt->ports;
 		if (scan & opt->scanflag)
 		{
 			// open sockets and create threads
-			if (scan == 128)
+			if (scan == 64)
 				proto = IPPROTO_UDP;
 			for (int i = 0; i < opt->threads; i++)
 			{
 				if ((opt->sockets[i] = (t_socket *)malloc(sizeof(t_socket))) == NULL)
 					return (-1);
-				if ((opt->sockets[i]->sock_fd = socket(AF_INET, SOCK_RAW, proto)) < 0)
+				if ((opt->sockets[i]->sock_fd = socket(PF_INET, SOCK_RAW, proto)) < 0)
 				{
 					fprintf(stderr, "Error: Socket file descriptor not received\n");
 					return (-1);
