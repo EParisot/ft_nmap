@@ -93,6 +93,16 @@ typedef struct	s_probe_arg
 	uint8_t			scan;
 }				t_probe_arg;
 
+typedef struct s_psh
+{
+	u_int32_t source_address;
+	u_int32_t dest_address;
+	u_int8_t placeholder;
+	u_int8_t protocol;
+	u_int16_t tcp_length;
+    struct tcphdr tcp;
+}               t_psh;
+
 
 /*		errors.c			*/
 void	clean_env(t_opt *opt);
@@ -110,6 +120,7 @@ int		nmap_wrapper(t_opt *opt);
 
 /*		packets_forge.c		*/
 int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, int sock);
+void	geniphdr(struct ip *ip, char *addr);
 /****************************/
 
 /*		netutils.c			*/

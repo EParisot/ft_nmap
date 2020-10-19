@@ -1,36 +1,10 @@
 #include "../includes/ft_nmap.h"
 
-typedef struct s_psh
+static void syn_tcphdr(struct tcphdr* tcph, int port)
 {
-	u_int32_t source_address;
-	u_int32_t dest_address;
-	u_int8_t placeholder;
-	u_int8_t protocol;
-	u_int16_t tcp_length;
-    struct tcphdr tcp;
-}               t_psh;
-
-static void syn_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, char *addr)
-{
-    iph->ihl = 5;
-	iph->version = 4;
-	iph->tos = 0;
-	iph->tot_len = sizeof (struct ip) + sizeof (struct tcphdr);
-	iph->id = htons(0);
-	iph->frag_off = htons(16384);
-	iph->ttl = 64;
-	iph->protocol = IPPROTO_TCP;
-	iph->check = 0;
-	iph->saddr = inet_addr(opt->localhost);
-	iph->daddr = inet_addr(addr);
-    iph->check = csum((unsigned short *) datagram, iph->tot_len >> 1);
-}
-
-static void syn_tcphdr(struct tcphdr* tcph)
-{
-    tcph->source = htons(9999);
-	tcph->dest = htons(80);
-	tcph->seq = htonl(1105024978);
+    tcph->source = htons(port);
+	tcph->dest = htons(port);
+	tcph->seq = htonl(port);
 	tcph->ack_seq = 0;
 	tcph->doff = sizeof(struct tcphdr) / 4;
 	tcph->fin=0;
@@ -57,8 +31,8 @@ static struct sockaddr_in probe_fillsynpacket(t_opt *opt, int sock, char **pkt, 
 	ft_bzero(&dest, sizeof(struct sockaddr_in));
     tcph = (struct tcphdr *)(datagram + sizeof(struct ip));
     ft_memset(datagram, 0, 4096);
-    syn_iphdr(opt, (struct iphdr *)datagram, datagram, addr);
-    syn_tcphdr((struct tcphdr *)(datagram + sizeof(struct ip)));
+    geniphdr((struct ip *)datagram, addr);
+    syn_tcphdr((struct tcphdr *)(datagram + sizeof(struct ip)), port);
 	if (setsockopt(sock, IPPROTO_IP, IP_HDRINCL, val, sizeof (one)) < 0)
 	{
 		printf ("Error setting IP_HDRINCL. \n");

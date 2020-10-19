@@ -1,31 +1,5 @@
 #include "../includes/ft_nmap.h"
 
-typedef struct s_psh
-{
-	u_int32_t source_address;
-	u_int32_t dest_address;
-	u_int8_t placeholder;
-	u_int8_t protocol;
-	u_int16_t tcp_length;
-    struct tcphdr tcp;
-}               t_psh;
-
-static void ack_iphdr(t_opt *opt, struct iphdr* iph, char *datagram, struct in_addr dest_ip)
-{
-    iph->ihl = 5;
-	iph->version = 4;
-	iph->tos = 0;
-	iph->tot_len = sizeof (struct ip) + sizeof (struct tcphdr);
-	iph->id = htons(0);
-	iph->frag_off = htons(16384);
-	iph->ttl = 64;
-	iph->protocol = IPPROTO_TCP;
-	iph->check = 0;
-	iph->saddr = inet_addr(opt->localhost);
-	iph->daddr = dest_ip.s_addr;
-    iph->check = csum((unsigned short *) datagram, iph->tot_len >> 1);
-}
-
 static void ack_tcphdr(struct tcphdr* tcph)
 {
     tcph->source = htons(9999);
@@ -58,7 +32,7 @@ static struct sockaddr_in probe_fillackpacket(t_opt *opt, int sock, char **pkt, 
     tcph = (struct tcphdr *)(datagram + sizeof(struct ip));
     dest_ip.s_addr = inet_addr(addr);
     ft_memset(datagram, 0, 4096);
-    ack_iphdr(opt, (struct iphdr *)datagram, datagram, dest_ip);
+    geniphdr((struct ip *)datagram, addr);
     ack_tcphdr((struct tcphdr *)(datagram + sizeof(struct ip)));
 	if (setsockopt(sock, IPPROTO_IP, IP_HDRINCL, val, sizeof (one)) < 0)
 	{
@@ -80,13 +54,11 @@ static struct sockaddr_in probe_fillackpacket(t_opt *opt, int sock, char **pkt, 
 
 int scan_ack(t_opt *opt, int sock, char *addr, int port)
 {
-    int ret;
     struct timeval tv;
     char    pkt[4096];
     char *tmp = pkt;
     struct sockaddr_in dest;
 
-    ret = -1;
     tv.tv_sec = 5;
     tv.tv_usec = 0;
     if(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv)) < 0)
@@ -105,5 +77,5 @@ int scan_ack(t_opt *opt, int sock, char *addr, int port)
 		printf ("Error sending ack packet.\n");
 		return -1;
 	}
-    return ret;
+    return 0;
 }

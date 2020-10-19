@@ -22,16 +22,12 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 	int 				buf_len = 1024;
 	char				*buf = (char*)malloc(buf_len);
 	ft_bzero(buf, buf_len);	
-	ft_strcat(buf, "------------------------\n");
-
-	ft_bzero(str, str_len);
-	sprintf(str, "Total packet available: %d bytes\n", header->caplen);
-    ft_strcat(buf, str);
 
 	const struct ether_header* ethh;
     const struct ip* iph;
     const struct tcphdr* tcph;
     //const struct udphdr* udph;
+	(void)header;
 	ethh = (struct ether_header*)packet;
     if (ntohs(ethh->ether_type) == ETHERTYPE_IP)
 	{
@@ -86,21 +82,21 @@ static t_device *init_ndevice()
     return (dev);
 }
 
-static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* const filter)
+static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* filter)
 {
+	//pthread_mutex_lock(opt->lock);
     if (pcap_lookupnet(opt->dev->device, &(opt->dev->ip), &(opt->dev->subnet_mask), opt->dev->errbuf) == -1)
     {
         printf("ft_nmap: Could not get information for device: %s\n", opt->dev->device);
         opt->dev->ip = 0;
         opt->dev->subnet_mask = 0;
     }
-    opt->sockets[sock_id]->handle = pcap_open_live(opt->dev->device, 1028, 0, 1000, opt->dev->errbuf);
+    opt->sockets[sock_id]->handle = pcap_open_live(opt->dev->device, 1024, 1, 1000, opt->dev->errbuf);
     if (opt->sockets[sock_id]->handle == NULL)
     {
         fprintf(stderr, "ft_nmap: Cannot open interface %s", opt->dev->device);
         return (-1);
     }
-	pthread_mutex_lock(opt->lock);
     if (pcap_compile(opt->sockets[sock_id]->handle, &(opt->sockets[sock_id]->filter), filter, 0, opt->dev->ip) == -1)
     {
         printf("ft_nmap: Bad filter - %s\n", pcap_geterr(opt->sockets[sock_id]->handle));
@@ -111,41 +107,21 @@ static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* const filter)
         printf("ft_nmap: Error setting filter - %s\n", pcap_geterr(opt->sockets[sock_id]->handle));
         return (-1);
     }
-	pthread_mutex_unlock(opt->lock);
+	printf("filter: %s\n", filter);
+	//pthread_mutex_unlock(opt->lock);
     return (1);
 }
 
 static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int port, uint8_t scan)
 {
 	char			str_addr[INET_ADDRSTRLEN];
-	char			*str_port;
-	char			*str_filter;
+	char			str_filter[100];
 	t_probe_arg		*args;
-	//struct timeval	start;
-	//struct timeval	curr;
-	//int				str_len = 64;
-	//char			str[str_len];
 
 	ft_bzero(str_addr, INET_ADDRSTRLEN);
-	if ((str_filter = (char *)malloc(46 + 2 * INET_ADDRSTRLEN + 6)) == NULL)
-		return (-1);
-	ft_bzero(str_filter, 46 + 2 * INET_ADDRSTRLEN + 6);
-
-	if (scan == 128)
-		ft_strcat(str_filter, "udp and src host ");
-	else
-		ft_strcat(str_filter, "tcp and src host ");
-	inet_ntop(AF_INET, &addr->sin_addr, str_addr, INET_ADDRSTRLEN);
-	ft_strcat(str_filter, str_addr);
-	
-	ft_strcat(str_filter, " and dst host ");
+	ft_bzero(str_filter, 100);
+	ft_strcat(str_filter, "dst host ");
 	ft_strcat(str_filter, opt->localhost);
-	
-	str_port = ft_itoa(port);
-	ft_strcat(str_filter, " and src port ");
-	ft_strcat(str_filter, str_port);
-	
-	printf("%d: listening %s\n", scan, str_filter);
 	if (nmap_pcapsetup(opt, sock_id, str_filter) == -1)
 		return (-1);
 	if ((args = (t_probe_arg*)malloc(sizeof(t_probe_arg))) == NULL)
@@ -157,8 +133,9 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	args->lock = opt->lock;
 	args->port = port;
 	args->scan = scan;
+	(void)addr;
 	//pcap_setnonblock(opt->sockets[sock_id]->handle, 1, NULL);
-	pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)args);
+	int z = pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)args); printf("dispatch: %d\n", z);
 	/*gettimeofday(&start, NULL);
 	while (1)
 	{
@@ -174,8 +151,7 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 			break;
 		}
 	}*/
-	free(str_port);
-	free(str_filter);
+	//free(str_port);
 	free(args);
 	return (0);
 }
@@ -227,14 +203,14 @@ static int	nmap_sender(t_opt *opt)
 		return (-1);
 
 	// nmap loop
-	for (int scan = (1 << 1); scan <= 0xFF && g_stop == false; scan = scan << 1)
+	for (int scan = (1 << 1); scan < 0xFF && g_stop == false; scan = scan << 1)
 	{
 		tmp_ips = opt->ips;
 		tmp_port = opt->ports;
 		if (scan & opt->scanflag)
 		{
 			// open sockets and create threads
-			if (scan == 128)
+			if (scan == 64)
 				proto = IPPROTO_UDP;
 			for (int i = 0; i < opt->threads && g_stop == false; i++)
 			{
