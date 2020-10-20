@@ -104,6 +104,17 @@ typedef struct s_psh
 }               t_psh;
 
 
+# define T_FIN 1 << 1
+# define T_SYN 1 << 2
+# define T_RST 1 << 3
+# define T_PUSH 1 << 4
+# define T_ACK 1 << 5
+# define T_URG 1 << 6
+
+void		geniphdr(struct ip *ip, char *addr);
+void    	gentcphdr(struct tcphdr* tcph, int port, uint8_t flag);
+uint16_t    genpshdr(struct tcphdr *tcph, uint32_t s_addr, char *local);
+
 /*		errors.c			*/
 void	clean_env(t_opt *opt);
 void	del(void *addr, size_t size);
@@ -120,7 +131,6 @@ int		nmap_wrapper(t_opt *opt);
 
 /*		packets_forge.c		*/
 int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, int sock);
-void	geniphdr(struct ip *ip, char *addr);
 /****************************/
 
 /*		netutils.c			*/
@@ -129,12 +139,8 @@ unsigned short	csum(unsigned short *ptr, int nbytes);
 /****************************/
 
 /*		scan_*.c			*/
-int             scan_syn(t_opt *opt, int sock, char *addr, int port);
-int             scan_null(t_opt *opt, int sock, char *addr, int port);
-int             scan_xmas(t_opt *opt, int sock, char *addr, int port);
-int             scan_udp(t_opt *opt, int sock, char *addr, int port);
-int             scan_ack(t_opt *opt, int sock, char *addr, int port);
-int             scan_fin(t_opt *opt, int sock, char *addr, int port);
+int scantcp(t_opt *opt, int sock, char *addr, int port, uint8_t flag);
+int scanudp(t_opt *opt, int sock, char *addr, int port);
 /****************************/
 
 #endif

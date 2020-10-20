@@ -1,13 +1,13 @@
 #include "../includes/ft_nmap.h"
 
-typedef struct __attribute__((packed)) s_psh
+typedef struct __attribute__((packed)) s_udppsh
 {
     u_int32_t source_address;
     u_int32_t dest_address;
     u_int8_t placeholder;
     u_int8_t protocol;
     u_int16_t udp_length;
-}	t_psh;
+}	t_udppsh;
 
 
 unsigned short chksum(unsigned short *ptr,int nbytes) 
@@ -39,7 +39,7 @@ static struct sockaddr_in probe_filludppacket(char **pkt, char *addr, int port)
 	char *datagram = *pkt;
 	char *pseudogram;
 	struct sockaddr_in  sin;
-    t_psh   psh;
+    t_udppsh   psh;
 
 
     ft_memset(datagram, 0, 4096);
@@ -79,23 +79,22 @@ static struct sockaddr_in probe_filludppacket(char **pkt, char *addr, int port)
     int psize = sizeof(t_psh) + sizeof(struct udphdr);
     pseudogram = malloc(psize);
      
-    memcpy(pseudogram , (char*) &psh , sizeof (t_psh));
-    memcpy(pseudogram + sizeof(t_psh) , udph , sizeof(struct udphdr));
+    memcpy(pseudogram , (char*) &psh , sizeof (t_udppsh));
+    memcpy(pseudogram + sizeof(t_udppsh) , udph , sizeof(struct udphdr));
      
     udph->check = chksum( (unsigned short*) pseudogram , psize);
      
     return (sin);
 }
 
-int scan_udp(t_opt *opt, int sock, char *addr, int port)
+int scanudp(t_opt *opt, int sock, char *addr, int port)
 {
-    int ret;
     struct timeval tv;
     char    pkt[4096];
     char *tmp = pkt;
     struct sockaddr_in dest;
     (void)opt;
-    ret = -1;
+
     tv.tv_sec = 5;
     tv.tv_usec = 0;
     if(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv)) < 0)
@@ -110,5 +109,5 @@ int scan_udp(t_opt *opt, int sock, char *addr, int port)
 		printf ("Error sending udp packet.\n");
 		return -1;
 	}
-    return ret;
+    return 0;
 }
