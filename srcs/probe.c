@@ -14,10 +14,10 @@
 
 int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, int sock)
 {
-	char	str_addr[INET_ADDRSTRLEN];
+	uint8_t	str_addr[INET_ADDRSTRLEN];
 
 	ft_bzero(str_addr, INET_ADDRSTRLEN);
-	inet_ntop(AF_INET, &addr->sin_addr, str_addr, INET_ADDRSTRLEN);
+	inet_ntop(AF_INET, &addr->sin_addr, (char*)str_addr, INET_ADDRSTRLEN);
     switch((char)scan)
     {
         case (1 << (1)):

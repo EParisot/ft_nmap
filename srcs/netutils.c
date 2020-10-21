@@ -1,10 +1,10 @@
 #include "../includes/ft_nmap.h"
 
-char                *getlocalhost(t_opt *opt)
+uint8_t                *getlocalhost(t_opt *opt)
 {
     struct ifaddrs  *id;
     struct ifaddrs  *ifa;
-    char            *str;
+    char         *str;
 
     str = NULL;
     if (getifaddrs(&id) == -1)
@@ -18,7 +18,7 @@ char                *getlocalhost(t_opt *opt)
         }
     }
     freeifaddrs(id);
-    return str;
+    return (uint8_t*)str;
 }
 
 unsigned short csum(unsigned short *ptr, int nbytes)

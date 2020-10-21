@@ -84,7 +84,7 @@ static t_device *init_ndevice()
 
 static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* filter)
 {
-	//pthread_mutex_lock(opt->lock);
+	pthread_mutex_lock(opt->lock);
     if (pcap_lookupnet(opt->dev->device, &(opt->dev->ip), &(opt->dev->subnet_mask), opt->dev->errbuf) == -1)
     {
         printf("ft_nmap: Could not get information for device: %s\n", opt->dev->device);
@@ -108,20 +108,20 @@ static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* filter)
         return (-1);
     }
 	printf("filter: %s\n", filter);
-	//pthread_mutex_unlock(opt->lock);
+	pthread_mutex_unlock(opt->lock);
     return (1);
 }
 
 static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int port, uint8_t scan)
 {
 	char			str_addr[INET_ADDRSTRLEN];
-	char			str_filter[100];
+	char			str_filter[32];
 	t_probe_arg		*args;
 
 	ft_bzero(str_addr, INET_ADDRSTRLEN);
-	ft_bzero(str_filter, 100);
-	ft_strcat(str_filter, "dst host ");
-	ft_strcat(str_filter, opt->localhost);
+	ft_bzero(str_filter, 32);
+	ft_strcat(str_filter, "dst port 9001");
+	//ft_strcat(str_filter, opt->localhost);
 	if (nmap_pcapsetup(opt, sock_id, str_filter) == -1)
 		return (-1);
 	if ((args = (t_probe_arg*)malloc(sizeof(t_probe_arg))) == NULL)
@@ -159,12 +159,13 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 void	*probe(void *vargs)
 {
 	t_thread_arg *args = (t_thread_arg *)vargs;
-
+	//pthread_mutex_lock(args->opt->lock);
 	send_probe(args->opt, args->ip, args->port, args->scan, args->opt->sockets[args->sock_id]->sock_fd);
 	wait_response(args->opt, args->sock_id, args->ip, args->port, args->scan);
 	args->opt->sockets[args->sock_id]->available = 1;
 	pcap_close(args->opt->sockets[args->sock_id]->handle);
 	pcap_freecode(&(args->opt->sockets[args->sock_id]->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
+	//pthread_mutex_unlock(args->opt->lock);
 	free(args);
 	return (NULL);
 }

@@ -48,8 +48,8 @@ typedef struct          s_device
 
 typedef struct			s_socket
 {
-	int					sock_fd;
-	int					available;
+	int32_t					sock_fd;
+	int32_t					available;
 	pthread_t			*thread;
 	pcap_t      		*handle;
 	struct bpf_program  filter;
@@ -57,7 +57,7 @@ typedef struct			s_socket
 
 typedef struct  s_opt
 {
-	char			*localhost;
+	uint8_t			*localhost;
     uint8_t     	threads;    /* 250 threads rentrent large dans un uint8_t */
     uint8_t     	scanflag;   /* 8 bits suffisent pour caler tous les flags possibles en binaire */ 
 	t_list			*ranges;	/* ranges option */
@@ -71,16 +71,16 @@ typedef struct  s_opt
 
 typedef struct	s_range
 {
-	int			start;
-	int			end;
+	int32_t			start;
+	int32_t		end;
 }				t_range;
 
 typedef struct	s_thread_arg
 {
 	t_opt				*opt;
-	int					sock_id;
+	int32_t					sock_id;
 	struct sockaddr_in	*ip;
-	int					port;
+	int32_t					port;
 	uint8_t				scan;
 	pthread_mutex_t		*lock;
 }				t_thread_arg;
@@ -89,7 +89,7 @@ typedef struct	s_probe_arg
 {
 	FILE			*logfile;
 	pthread_mutex_t	*lock;
-	int				port;
+	int32_t			port;
 	uint8_t			scan;
 }				t_probe_arg;
 
@@ -111,9 +111,9 @@ typedef struct s_psh
 # define T_ACK 1 << 5
 # define T_URG 1 << 6
 
-void		geniphdr(struct ip *ip, char *addr);
-void    	gentcphdr(struct tcphdr* tcph, int port, uint8_t flag);
-uint16_t    genpshdr(struct tcphdr *tcph, uint32_t s_addr, char *local);
+void		geniphdr(struct ip *ip, uint8_t *addr);
+void    	gentcphdr(struct tcphdr* tcph, int32_t port, uint8_t flag);
+uint16_t    genpshdr(struct tcphdr *tcph, uint32_t s_addr, uint8_t *local);
 
 /*		errors.c			*/
 void	clean_env(t_opt *opt);
@@ -134,13 +134,13 @@ int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, in
 /****************************/
 
 /*		netutils.c			*/
-char            *getlocalhost(t_opt *opt);
+uint8_t            *getlocalhost(t_opt *opt);
 unsigned short	csum(unsigned short *ptr, int nbytes);
 /****************************/
 
 /*		scan_*.c			*/
-int scantcp(t_opt *opt, int sock, char *addr, int port, uint8_t flag);
-int scanudp(t_opt *opt, int sock, char *addr, int port);
+int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag);
+int scanudp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port);
 /****************************/
 
 #endif

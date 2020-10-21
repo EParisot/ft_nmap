@@ -1,8 +1,8 @@
 #include "../includes/ft_nmap.h"
 
-void    gentcphdr(struct tcphdr *tcph, int port, uint8_t flag)
+void    gentcphdr(struct tcphdr *tcph, int32_t port, uint8_t flag)
 {
-    tcph->source = htons(port);
+    tcph->source = htons(9001);
 	tcph->dest = htons(port);
 	tcph->seq = htonl(port);
 	tcph->ack_seq = 0;
@@ -20,11 +20,11 @@ void    gentcphdr(struct tcphdr *tcph, int port, uint8_t flag)
 	tcph->check = 0;
 }
 
-void	geniphdr(struct ip *ip, char *addr)
+void	geniphdr(struct ip *ip, uint8_t *addr)
 {
 	struct in_addr ad;
 
-	inet_pton(AF_INET, addr, &ad);
+	inet_pton(AF_INET, (char*)addr, &ad);
 	ip->ip_v = 4;
 	ip->ip_hl = 5;
 	ip->ip_tos = 0;
@@ -37,12 +37,12 @@ void	geniphdr(struct ip *ip, char *addr)
 	ip->ip_dst = ad;
 }
 
-uint16_t    genpshdr(struct tcphdr *tcph, uint32_t s_addr, char *local)
+uint16_t    genpshdr(struct tcphdr *tcph, uint32_t s_addr, uint8_t *local)
 {
     t_psh       psh;
     uint16_t    ret;
 
-    psh.source_address = inet_addr(local);
+    psh.source_address = inet_addr((char*)local);
 	psh.dest_address = s_addr;
 	psh.placeholder = 0;
 	psh.protocol = IPPROTO_TCP;
