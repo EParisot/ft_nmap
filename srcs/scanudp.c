@@ -34,10 +34,10 @@ unsigned short chksum(unsigned short *ptr,int nbytes)
     return(answer);
 }
 
-static struct sockaddr_in probe_filludppacket(char **pkt, char *addr, int port)
+static struct sockaddr_in probe_filludppacket(uint8_t **pkt, uint8_t *addr, int32_t port)
 {
-	char *datagram = *pkt;
-	char *pseudogram;
+	uint8_t *datagram = *pkt;
+	uint8_t *pseudogram;
 	struct sockaddr_in  sin;
     t_udppsh   psh;
 
@@ -48,7 +48,7 @@ static struct sockaddr_in probe_filludppacket(char **pkt, char *addr, int port)
      
     sin.sin_family = AF_INET;
     sin.sin_port = htons(port);
-    sin.sin_addr.s_addr = inet_addr(addr);
+    sin.sin_addr.s_addr = inet_addr((char *)addr);
     //Fill in the IP Header
     iph->ihl = 5;
     iph->version = 4;
@@ -59,7 +59,7 @@ static struct sockaddr_in probe_filludppacket(char **pkt, char *addr, int port)
     iph->ttl = 255;
     iph->protocol = IPPROTO_UDP;
     iph->check = 0;      //Set to 0 before calculating checksum
-    iph->saddr = inet_addr(addr);    //Spoof the source ip address
+    iph->saddr = inet_addr((char *)addr);    //Spoof the source ip address
     iph->daddr = sin.sin_addr.s_addr;
     //Ip checksum
     iph->check = csum((unsigned short *) datagram, iph->tot_len);
@@ -70,7 +70,7 @@ static struct sockaddr_in probe_filludppacket(char **pkt, char *addr, int port)
     udph->check = 0; //leave checksum 0 now, filled later by pseudo header
      
     //Now the UDP checksum using the pseudo header
-    psh.source_address = inet_addr(addr);
+    psh.source_address = inet_addr((char *)addr);
     psh.dest_address = sin.sin_addr.s_addr;
     psh.placeholder = 0;
     psh.protocol = IPPROTO_UDP;
@@ -87,11 +87,11 @@ static struct sockaddr_in probe_filludppacket(char **pkt, char *addr, int port)
     return (sin);
 }
 
-int scanudp(t_opt *opt, int sock, char *addr, int port)
+int scanudp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port)
 {
     struct timeval tv;
-    char    pkt[4096];
-    char *tmp = pkt;
+    uint8_t pkt[4096];
+    uint8_t *tmp = pkt;
     struct sockaddr_in dest;
     (void)opt;
 
