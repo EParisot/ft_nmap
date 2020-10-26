@@ -141,7 +141,7 @@ unsigned short	csum(unsigned short *ptr, int nbytes);
 
 /*		scan_*.c			*/
 int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag, int z);
-int scanudp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port);
+int scanudp(t_opt *opt, int sock, char *addr, int port);
 /****************************/
 
 #endif

@@ -43,7 +43,7 @@ int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, in
             scantcp(opt, sock, str_addr, port, T_FIN | T_PUSH | T_URG, 3);
             break ;
         case (1 << (6)):
-            scanudp(opt, sock, str_addr, port);
+            scanudp(opt, sock, (char*)str_addr, port);
             break ;
         default:
             printf("already scannedall\n");
