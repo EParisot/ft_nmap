@@ -30,6 +30,7 @@
 # include <pthread.h> // for threads
 # include <ifaddrs.h> // for getifaddr and ifaddr structcs
 # include <netinet/ip.h> // for iphdr struct
+# include <netinet/ip_icmp.h> // for iphdr struct
 # include <netinet/tcp.h> // for tcphdr struct
 #include<netinet/udp.h>
 # include <signal.h>
@@ -139,7 +140,7 @@ unsigned short	csum(unsigned short *ptr, int nbytes);
 /****************************/
 
 /*		scan_*.c			*/
-int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag);
+int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag, int z);
 int scanudp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port);
 /****************************/
 

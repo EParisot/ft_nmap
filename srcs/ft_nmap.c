@@ -15,50 +15,78 @@
 static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *header, const uint8_t *packet)
 {
 	FILE 				*logfile = (FILE *)(((t_probe_arg*)args)->logfile);
-	int					port = (int)(((t_probe_arg*)args)->port);
-	uint8_t				scan = (uint8_t)(((t_probe_arg*)args)->scan);
-	int					str_len = 64;
+	//int					port = (int)(((t_probe_arg*)args)->port);
+	//uint8_t				scan = (uint8_t)(((t_probe_arg*)args)->scan);
+	int					str_len = 256;
 	char				str[str_len];
 	int 				buf_len = 1024;
-	char				*buf = (char*)malloc(buf_len);
-	ft_bzero(buf, buf_len);	
-
-	const struct ether_header* ethh;
-    const struct ip* iph;
-    const struct tcphdr* tcph;
-    //const struct udphdr* udph;
+	char				*buf = (char*)malloc(buf_len);	
+    
+	const struct ip* iphdr;
+    const struct tcphdr* tcphdr;
+	const struct icmp* icmphdr;
+    const struct udphdr* udphdr;
+	char iphi[256], srcip[256], dstip[256];
 	(void)header;
-	ethh = (struct ether_header*)packet;
-    if (ntohs(ethh->ether_type) == ETHERTYPE_IP)
-	{
-		iph = (struct ip*)(packet + sizeof(struct ether_header));
-		if (iph->ip_p == IPPROTO_TCP)
-		{
+
+	ft_bzero(buf, buf_len);
+	packet += 14;
+	iphdr = (struct ip*)packet;
+    ft_strcpy(srcip, inet_ntoa(iphdr->ip_src));
+    ft_strcpy(dstip, inet_ntoa(iphdr->ip_dst));
+	sprintf(iphi, "ID:%d TOS:0x%x, TTL:%d IpLen:%d DgLen:%d",
+            ntohs(iphdr->ip_id), iphdr->ip_tos, iphdr->ip_ttl,
+            4*iphdr->ip_hl, ntohs(iphdr->ip_len));
+	packet += 4*iphdr->ip_hl;
+	switch (iphdr->ip_p)
+    {
+    	case IPPROTO_TCP:
+    	    tcphdr = (struct tcphdr*)packet;
 			ft_bzero(str, str_len);
-			sprintf(str, "%d TCP packet: %d\n", scan, port);
-    		ft_strcat(buf, str);
-            tcph = (struct tcphdr*)(packet + sizeof(struct ether_header) + sizeof(struct ip));
-			if (tcph->th_flags & TH_SYN)
-			{
-					ft_bzero(str, str_len);
-					sprintf(str, "SYN: %d\n", port);
-    				ft_strcat(buf, str);
-			}
-			else if (tcph->th_flags & TH_RST)
-			{
-					ft_bzero(str, str_len);
-					sprintf(str, "RST: %d\n", port);
-    				ft_strcat(buf, str);
-			}
-		}
-		else if (iph->ip_p == IPPROTO_UDP)
-		{
+    	    sprintf(str, "TCP  %s:%d -> %s:%d\n", srcip, ntohs(tcphdr->th_sport),
+    	           dstip, ntohs(tcphdr->th_dport));
+    	    ft_strcat(buf, str);
 			ft_bzero(str, str_len);
-			sprintf(str, "UDP packet: %d\n", port);
-    		ft_strcat(buf, str);
-            //udph = (struct tcphdr*)(packet + sizeof(struct ether_header) + sizeof(struct ip));
-		}
-	}
+			sprintf(str, "%s\n", iphi);
+			ft_strcat(buf, str);
+			ft_bzero(str, str_len);
+    	    sprintf(str, "%c%c%c%c%c%c Seq: 0x%x Ack: 0x%x Win: 0x%x TcpLen: %d\n",
+    	           (tcphdr->th_flags & TH_URG ? 'U' : '*'),
+    	           (tcphdr->th_flags & TH_ACK ? 'A' : '*'),
+    	           (tcphdr->th_flags & TH_PUSH ? 'P' : '*'),
+    	           (tcphdr->th_flags & TH_RST ? 'R' : '*'),
+    	           (tcphdr->th_flags & TH_SYN ? 'S' : '*'),
+    	           (tcphdr->th_flags & TH_SYN ? 'F' : '*'),
+    	           ntohl(tcphdr->th_seq), ntohl(tcphdr->th_ack),
+    	           ntohs(tcphdr->th_win), 4*tcphdr->th_off);
+			ft_strcat(buf, str);
+    	    break;
+	
+    	case IPPROTO_UDP:
+    	    udphdr = (struct udphdr*)packet;
+			ft_bzero(str, str_len);
+    	    sprintf(str, "UDP  %s:%d -> %s:%d\n", srcip, ntohs(udphdr->uh_sport),
+    	           dstip, ntohs(udphdr->uh_dport));
+				ft_strcat(buf, str);
+			ft_bzero(str, str_len);
+    	    sprintf(str, "%s\n", iphi);
+			ft_strcat(buf, str);
+    	    break;
+	
+    	case IPPROTO_ICMP:
+    	    icmphdr = (struct icmp*)packet;
+			ft_bzero(str, str_len);
+    	    sprintf(str, "ICMP %s -> %s\n", srcip, dstip);
+			ft_strcat(buf, str);
+			ft_bzero(str, str_len);
+    	    sprintf(str, "%s\n", iphi);
+			ft_strcat(buf, str);
+			ft_bzero(str, str_len);
+    	    sprintf(str, "Type:%d Code:%d ID:%d Seq:%d\n", (int)(icmphdr->icmp_type), (int)(icmphdr->icmp_code),
+    	           (int)ntohs(icmphdr->icmp_hun.ih_idseq.icd_id), (int)ntohs(icmphdr->icmp_hun.ih_idseq.icd_seq));
+			ft_strcat(buf, str);
+    	    break;
+    }
     ft_strcat(buf, "------------------------\n");
 	if (logfile)
 		fwrite(buf, ft_strlen(buf), 1, logfile);
@@ -84,7 +112,7 @@ static t_device *init_ndevice()
 
 static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* filter)
 {
-	pthread_mutex_lock(opt->lock);
+	//pthread_mutex_lock(opt->lock);
     if (pcap_lookupnet(opt->dev->device, &(opt->dev->ip), &(opt->dev->subnet_mask), opt->dev->errbuf) == -1)
     {
         printf("ft_nmap: Could not get information for device: %s\n", opt->dev->device);
@@ -108,7 +136,7 @@ static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* filter)
         return (-1);
     }
 	printf("filter: %s\n", filter);
-	pthread_mutex_unlock(opt->lock);
+	//pthread_mutex_unlock(opt->lock);
     return (1);
 }
 
@@ -135,7 +163,8 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	args->scan = scan;
 	(void)addr;
 	//pcap_setnonblock(opt->sockets[sock_id]->handle, 1, NULL);
-	int z = pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)args); printf("dispatch: %d\n", z);
+	int z = pcap_dispatch(opt->sockets[sock_id]->handle, 3, my_packet_handler, (uint8_t *)args);
+	printf("dispatch: %d\n", z);
 	/*gettimeofday(&start, NULL);
 	while (1)
 	{
@@ -159,13 +188,13 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 void	*probe(void *vargs)
 {
 	t_thread_arg *args = (t_thread_arg *)vargs;
-	//pthread_mutex_lock(args->opt->lock);
 	send_probe(args->opt, args->ip, args->port, args->scan, args->opt->sockets[args->sock_id]->sock_fd);
+	pthread_mutex_lock(args->opt->lock);
 	wait_response(args->opt, args->sock_id, args->ip, args->port, args->scan);
+	pthread_mutex_unlock(args->opt->lock);
 	args->opt->sockets[args->sock_id]->available = 1;
 	pcap_close(args->opt->sockets[args->sock_id]->handle);
 	pcap_freecode(&(args->opt->sockets[args->sock_id]->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
-	//pthread_mutex_unlock(args->opt->lock);
 	free(args);
 	return (NULL);
 }

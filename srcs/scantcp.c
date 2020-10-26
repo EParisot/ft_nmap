@@ -1,6 +1,6 @@
 #include "../includes/ft_nmap.h"
 
-int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag)
+int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag, int z) // a restructurer pour avoir 4 args only
 {
     struct timeval      tv;
     char                pkt[4096];
@@ -33,10 +33,13 @@ int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag)
 	dest.sin_family = AF_INET;
 	dest.sin_addr.s_addr = inet_addr((char*)addr);
 	((struct tcphdr *)(datagram + sizeof(struct ip)))->check = genpshdr((struct tcphdr *)(datagram + sizeof(struct ip)), inet_addr((char*)addr), opt->localhost);
-    if (sendto(sock, pkt, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr*)&dest, sizeof(dest)) < 0)
-	{
-		printf ("Error sending syn packet.\n");
-		return -1;
-	}
+    while (z--)
+    {
+        if (sendto(sock, pkt, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr*)&dest, sizeof(dest)) < 0)
+    	{
+	    	printf ("Error sending syn packet.\n");
+	    	return -1;
+	    }
+    }
 	return (0);
 }

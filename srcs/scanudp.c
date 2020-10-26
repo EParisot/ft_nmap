@@ -34,10 +34,10 @@ unsigned short chksum(unsigned short *ptr,int nbytes)
     return(answer);
 }
 
-static struct sockaddr_in probe_filludppacket(uint8_t **pkt, uint8_t *addr, int32_t port)
+static struct sockaddr_in probe_filludppacket(char **pkt, char *addr, int port)
 {
-	uint8_t *datagram = *pkt;
-	uint8_t *pseudogram;
+	char *datagram = *pkt;
+	char *pseudogram;
 	struct sockaddr_in  sin;
     t_udppsh   psh;
 
@@ -48,7 +48,7 @@ static struct sockaddr_in probe_filludppacket(uint8_t **pkt, uint8_t *addr, int3
      
     sin.sin_family = AF_INET;
     sin.sin_port = htons(port);
-    sin.sin_addr.s_addr = inet_addr((char *)addr);
+    sin.sin_addr.s_addr = inet_addr(addr);
     //Fill in the IP Header
     iph->ihl = 5;
     iph->version = 4;
@@ -59,18 +59,18 @@ static struct sockaddr_in probe_filludppacket(uint8_t **pkt, uint8_t *addr, int3
     iph->ttl = 255;
     iph->protocol = IPPROTO_UDP;
     iph->check = 0;      //Set to 0 before calculating checksum
-    iph->saddr = inet_addr((char *)addr);    //Spoof the source ip address
+    iph->saddr = inet_addr(addr);    //Spoof the source ip address
     iph->daddr = sin.sin_addr.s_addr;
     //Ip checksum
     iph->check = csum((unsigned short *) datagram, iph->tot_len);
     //UDP header
-    udph->source = htons(9999);
+    udph->source = htons(9001);
     udph->dest = htons(port);
     udph->len = htons(8); //tcp header size
     udph->check = 0; //leave checksum 0 now, filled later by pseudo header
      
     //Now the UDP checksum using the pseudo header
-    psh.source_address = inet_addr((char *)addr);
+    psh.source_address = inet_addr(addr);
     psh.dest_address = sin.sin_addr.s_addr;
     psh.placeholder = 0;
     psh.protocol = IPPROTO_UDP;
@@ -90,8 +90,8 @@ static struct sockaddr_in probe_filludppacket(uint8_t **pkt, uint8_t *addr, int3
 int scanudp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port)
 {
     struct timeval tv;
-    uint8_t pkt[4096];
-    uint8_t *tmp = pkt;
+    char    pkt[4096];
+    char *tmp = pkt;
     struct sockaddr_in dest;
     (void)opt;
 
@@ -102,7 +102,7 @@ int scanudp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port)
         printf("ft_nmap: timeout sending probe\n");
         return -1;
     }
-    dest = probe_filludppacket(&tmp, addr, port);
+    dest = probe_filludppacket(&tmp, (char*)addr, port);
     printf("sending packet\n");
     if (sendto(sock, pkt, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr *)&dest, sizeof(dest)) < 0)
 	{
