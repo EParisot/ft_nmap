@@ -16,7 +16,7 @@
 
 # define _POSIX_C_SOURCE 1 // for fileno()
 # define NPACKETS 1 // for pcap_loop()
-# define TIMEOUT 2
+# define TIMEOUT 5
 
 # include "../libft/libft.h"
 # include <stdlib.h>

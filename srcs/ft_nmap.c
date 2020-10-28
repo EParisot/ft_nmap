@@ -88,9 +88,11 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
     	    break;
     }
     ft_strcat(buf, "------------------------\n");
+	pthread_mutex_lock(((t_probe_arg*)args)->lock);
 	if (logfile)
 		fwrite(buf, ft_strlen(buf), 1, logfile);
 	printf("%s", buf);
+	pthread_mutex_unlock(((t_probe_arg*)args)->lock);
 }
 
 static t_device *init_ndevice()
@@ -135,7 +137,6 @@ static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* filter)
         printf("ft_nmap: Error setting filter - %s\n", pcap_geterr(opt->sockets[sock_id]->handle));
         return (-1);
     }
-	printf("filter: %s\n", filter);
 	//pthread_mutex_unlock(opt->lock);
     return (1);
 }
@@ -155,6 +156,13 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	ft_bzero(str_filter, 32);
 	ft_strcat(str_filter, "dst host ");
 	ft_strcat(str_filter, (char*)opt->localhost);
+	ft_strcat(str_filter, " and src port ");
+	char *str_port = ft_itoa(port);
+	ft_strcat(str_filter, str_port);
+	free(str_port);
+
+	printf("%s\n", str_filter);
+
 	if (nmap_pcapsetup(opt, sock_id, str_filter) == -1)
 		return (-1);
 	if ((args = (t_probe_arg*)malloc(sizeof(t_probe_arg))) == NULL)
@@ -194,9 +202,9 @@ void	*probe(void *vargs)
 {
 	t_thread_arg *args = (t_thread_arg *)vargs;
 	send_probe(args->opt, args->ip, args->port, args->scan, args->opt->sockets[args->sock_id]->sock_fd);
-	pthread_mutex_lock(args->opt->lock);
+	//pthread_mutex_lock(args->opt->lock);
 	wait_response(args->opt, args->sock_id, args->ip, args->port, args->scan);
-	pthread_mutex_unlock(args->opt->lock);
+	//pthread_mutex_unlock(args->opt->lock);
 	args->opt->sockets[args->sock_id]->available = 1;
 	pcap_close(args->opt->sockets[args->sock_id]->handle);
 	pcap_freecode(&(args->opt->sockets[args->sock_id]->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
