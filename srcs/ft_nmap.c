@@ -107,7 +107,7 @@ static t_device *init_ndevice()
 	ft_bzero(dev, sizeof(t_device));
 	if (pcap_findalldevs(&alldevsp, dev->errbuf))
 		return (NULL);
-	dev->device = ft_strdup(alldevsp->name);
+	dev->device = ft_strdup((alldevsp)->name);
 	pcap_freealldevs(alldevsp);
     return (dev);
 }

@@ -50,8 +50,8 @@ typedef struct          s_device
 
 typedef struct			s_socket
 {
-	int32_t					sock_fd;
-	int32_t					available;
+	int32_t				sock_fd;
+	int32_t				available;
 	pthread_t			*thread;
 	pcap_t      		*handle;
 	struct bpf_program  filter;
