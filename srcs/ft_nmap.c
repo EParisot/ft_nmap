@@ -145,6 +145,11 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	char			str_addr[INET_ADDRSTRLEN];
 	char			str_filter[32];
 	t_probe_arg		*args;
+	int			str_len = 64;
+	char			str[str_len];
+	struct timeval 	start;
+	struct timeval 	curr;
+	int				ret = 0;
 
 	ft_bzero(str_addr, INET_ADDRSTRLEN);
 	ft_bzero(str_filter, 32);
@@ -162,14 +167,15 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	args->port = port;
 	args->scan = scan;
 	(void)addr;
-	//pcap_setnonblock(opt->sockets[sock_id]->handle, 1, NULL);
-	int z = pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)args);
-	printf("dispatch: %d\n", z);
-	/*gettimeofday(&start, NULL);
+	pcap_setnonblock(opt->sockets[sock_id]->handle, 1, NULL);
+	gettimeofday(&start, NULL);
 	while (1)
 	{
+		ret = pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)args);
+		if (ret)
+			break;
 		gettimeofday(&curr, NULL);
-		if ((curr.tv_sec - start.tv_sec) * 1000000 > 1)
+		if ((curr.tv_sec - start.tv_sec) > TIMEOUT)
 		{
 			pcap_breakloop(opt->sockets[sock_id]->handle);
 			ft_bzero(str, str_len);
@@ -179,8 +185,7 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 			printf("%s", str);
 			break;
 		}
-	}*/
-	//free(str_port);
+	}
 	free(args);
 	return (0);
 }
