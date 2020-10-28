@@ -93,18 +93,18 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 		fwrite(buf, ft_strlen(buf), 1, logfile);
 	printf("%s", buf);
 	pthread_mutex_unlock(((t_probe_arg*)args)->lock);
+	free(buf);
 }
 
 static t_device *init_ndevice()
 {
     // on chope l'interface, sur ma vm c'est enp0s3 par exemple
     t_device	        *dev;
-	pcap_if_t	        *alldevsp;
+	pcap_if_t	        *alldevsp = NULL;
 
-	alldevsp = NULL;
     if ((dev = (t_device *)malloc(sizeof(t_device))) == NULL)
 		return (NULL);
-	ft_bzero(dev, sizeof(dev));
+	ft_bzero(dev, sizeof(t_device));
 	if (pcap_findalldevs(&alldevsp, dev->errbuf))
 		return (NULL);
 	dev->device = ft_strdup(alldevsp->name);
