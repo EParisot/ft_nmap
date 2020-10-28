@@ -104,6 +104,14 @@ typedef struct s_psh
     struct tcphdr tcp;
 }               t_psh;
 
+typedef struct s_udppsh
+{
+    u_int32_t source_address;
+    u_int32_t dest_address;
+    u_int8_t placeholder;
+    u_int8_t protocol;
+    u_int16_t udp_length;
+}       t_udppsh;
 
 # define T_FIN 1 << 1
 # define T_SYN 1 << 2

@@ -15,7 +15,7 @@ NAME	=	ft_nmap
 SRCS	=	srcs/main.c				\
 			srcs/options.c			\
 			srcs/ft_nmap.c			\
-			srcs/probe.c			\
+			srcs/scanner.c			\
 			srcs/errors.c			\
 			srcs/netutils.c			\
 			srcs/scanudp.c			\
