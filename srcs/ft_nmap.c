@@ -144,7 +144,7 @@ static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* filter)
 static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int port, uint8_t scan)
 {
 	char			str_addr[INET_ADDRSTRLEN];
-	char			str_filter[32];
+	char			str_filter[64];
 	t_probe_arg		*args;
 	int			str_len = 64;
 	char			str[str_len];
@@ -153,7 +153,7 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	int				ret = 0;
 
 	ft_bzero(str_addr, INET_ADDRSTRLEN);
-	ft_bzero(str_filter, 32);
+	ft_bzero(str_filter, 64);
 	ft_strcat(str_filter, "dst host ");
 	ft_strcat(str_filter, (char*)opt->localhost);
 	ft_strcat(str_filter, " and src port ");
@@ -187,7 +187,7 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 		{
 			pcap_breakloop(opt->sockets[sock_id]->handle);
 			ft_bzero(str, str_len);
-			sprintf(str, "Probe Timeout on port %d with %d scan\n", port, scan);
+			sprintf(str, "Probe Timeout on port %d with %d scan, %d\n", port, scan, ret);
 			if (opt->logfile)
 				fwrite(str, 1, 1, opt->logfile);
 			printf("%s", str);
@@ -254,12 +254,12 @@ static int	nmap_sender(t_opt *opt)
 		{
 			// open sockets and create threads
 			if (scan == 64)
-				proto = IPPROTO_UDP;
+				proto = IPPROTO_RAW;
 			for (int i = 0; i < opt->threads && g_stop == false; i++)
 			{
 				if ((opt->sockets[i] = (t_socket *)malloc(sizeof(t_socket))) == NULL)
 					return (-1);
-				if ((opt->sockets[i]->sock_fd = socket(AF_INET, scan == 64 ? SOCK_DGRAM : SOCK_RAW, proto)) < 0)
+				if ((opt->sockets[i]->sock_fd = socket(AF_INET, SOCK_RAW, proto)) < 0)
 				{
 					fprintf(stderr, "Error: Socket file descriptor not received\n");
 					return (-1);

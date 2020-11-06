@@ -22,12 +22,12 @@ static struct sockaddr_in genudppkt(char **pkt, char *addr, int port, char *host
     iph->version = 4;
     iph->tos = 0;
     iph->tot_len = sizeof (struct iphdr) + sizeof (struct udphdr);
-    iph->id = htonl(9999);
+    iph->id = htons(9001);
     iph->frag_off = 0;
     iph->ttl = 255;
     iph->protocol = IPPROTO_UDP;
     iph->check = 0;
-    iph->saddr = inet_addr(addr);
+    iph->saddr = inet_addr(host);
     iph->daddr = sin.sin_addr.s_addr;
     iph->check = csum((unsigned short *) datagram, iph->tot_len);
 
@@ -51,23 +51,29 @@ static struct sockaddr_in genudppkt(char **pkt, char *addr, int port, char *host
 
 int scanudp(t_opt *opt, int sock, char *addr, int port)
 {
-    struct timeval tv;
+    //struct timeval tv;
     char    pkt[4096];
     char *tmp = pkt;
     struct sockaddr_in dest;
 
-    tv.tv_sec = 5;
-    tv.tv_usec = 0;
-    if(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv)) < 0)
+    //tv.tv_sec = 10;
+    //tv.tv_usec = 0;
+    /*if(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv)) < 0)
     {
         printf("ft_nmap: timeout sending probe\n");
         return -1;
-    }
+    }*/
     dest = genudppkt(&tmp, addr, port, (char*)opt->localhost);
-    if (sendto(sock, pkt, sizeof(pkt), 0, (struct sockaddr *)&dest, sizeof(dest)) < 0)
+    //pthread_mutex_lock(opt->lock);
+    int z = 2;
+    while (z--)
+    {
+    if (sendto(sock, pkt, sizeof (struct iphdr) + sizeof (struct udphdr), 0, (struct sockaddr *)&dest, sizeof(dest)) < 0)
     {
         printf ("Error sending udp packet.\n");
         return -1;
     }
+    }
+    //pthread_mutex_unlock(opt->lock);
     return 1;
 }

@@ -19,7 +19,7 @@ int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, in
 	ft_bzero(str_addr, INET_ADDRSTRLEN);
 	inet_ntop(AF_INET, &addr->sin_addr, (char*)str_addr, INET_ADDRSTRLEN);
     // si on a un scan tcp fin/null/xmas il faut envoyer ca au prealable
-    if (scan != (1 << 1) && scan != (1 << 6))
+    if (scan != (1 << 1))
     {
         scantcp(opt, sock, str_addr, port, T_SYN, 1);
         scantcp(opt, sock, str_addr, port, T_ACK, 1);
