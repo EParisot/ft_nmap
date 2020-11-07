@@ -28,7 +28,7 @@ int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag,
 		printf ("Error setting IP_HDRINCL. \n");
         return -1;
 	}
-	geniphdr((struct ip *)datagram, addr);
+	geniphdr((struct ip *)datagram, addr, IPPROTO_TCP, sizeof(struct ip) + sizeof(struct tcphdr));
     gentcphdr((struct tcphdr *)(datagram + sizeof(struct ip)), port, flag);
 	dest.sin_family = AF_INET;
 	dest.sin_addr.s_addr = inet_addr((char*)addr);
@@ -37,7 +37,7 @@ int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag,
     {
         if (sendto(sock, pkt, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr*)&dest, sizeof(dest)) < 0)
     	{
-	    	printf ("Error sending syn packet.\n");
+	    	printf ("Error sending tcp packet.\n");
 	    	return -1;
 	    }
     }

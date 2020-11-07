@@ -4,7 +4,7 @@ void    gentcphdr(struct tcphdr *tcph, int32_t port, uint8_t flag)
 {
     tcph->source = htons(9001);
 	tcph->dest = htons(port);
-	tcph->seq = htonl(port);
+	tcph->seq = htonl(123456);
 	tcph->ack_seq = 0;
 	tcph->doff = sizeof(struct tcphdr) / 4;
 	tcph->fin= (flag & T_FIN) ? 1 : 0;
@@ -13,14 +13,12 @@ void    gentcphdr(struct tcphdr *tcph, int32_t port, uint8_t flag)
 	tcph->psh= (flag & T_PUSH) ? 1 : 0;
 	tcph->ack= (flag & T_ACK) ? 1 : 0;
 	tcph->urg= (flag & T_URG) ? 1 : 0;
-	tcph->window = htons(14600);
+	tcph->window = htons(1024);
 	tcph->check = 0; 
 	tcph->urg_ptr = 0;
-    tcph->dest = htons(port);
-	tcph->check = 0;
 }
 
-void	geniphdr(struct ip *ip, uint8_t *addr)
+void	geniphdr(struct ip *ip, uint8_t *addr, int protocol, int tot_len)
 {
 	struct in_addr ad;
 
@@ -28,12 +26,12 @@ void	geniphdr(struct ip *ip, uint8_t *addr)
 	ip->ip_v = 4;
 	ip->ip_hl = 5;
 	ip->ip_tos = 0;
-	ip->ip_len = sizeof(struct ip) + sizeof(struct tcphdr);
+	ip->ip_len = tot_len;
 	ip->ip_off = 0;
 	ip->ip_ttl = 255;
-	ip->ip_p = IPPROTO_TCP;
+	ip->ip_p = protocol;
 	ip->ip_sum = 0;
-	ip->ip_id = htons(5);
+	ip->ip_id = htons(1);
 	ip->ip_dst = ad;
 }
 
@@ -50,4 +48,29 @@ uint16_t    genpshdr(struct tcphdr *tcph, uint32_t s_addr, uint8_t *local)
 	ft_memcpy(&psh.tcp, tcph, sizeof(struct tcphdr));
     ret = csum((unsigned short*)&psh, sizeof(t_psh));
     return ret;
+}
+
+void	genudphdr(char **pkt, int port, char *addr, char *host)
+{
+	char *datagram = *pkt;
+	struct udphdr*	udph = (struct udphdr *) (datagram + sizeof (struct ip));
+	t_udppsh   psh;
+	char *pseudogram;
+
+	udph->source = htons(9001);
+    udph->dest = htons(port);
+    udph->len = htons(8);
+    udph->check = 0;
+
+	psh.source_address = inet_addr(host);
+    psh.dest_address = inet_addr(addr);
+    psh.placeholder = 0;
+    psh.protocol = IPPROTO_UDP;
+    psh.udp_length = htons(sizeof(struct udphdr));
+    
+    pseudogram = malloc(sizeof(t_udppsh) + sizeof(struct udphdr));
+    memcpy(pseudogram , (char*) &psh , sizeof (t_udppsh));
+    memcpy(pseudogram + sizeof(t_udppsh) , udph , sizeof(struct udphdr));
+    udph->check = csum( (unsigned short*) pseudogram , sizeof(t_udppsh) + sizeof(struct udphdr));
+	free(pseudogram);
 }

@@ -121,9 +121,10 @@ typedef struct s_udppsh
 # define T_ACK 1 << 5
 # define T_URG 1 << 6
 
-void		geniphdr(struct ip *ip, uint8_t *addr);
+void		geniphdr(struct ip *ip, uint8_t *addr, int protocol, int tot_len);
 void    	gentcphdr(struct tcphdr* tcph, int32_t port, uint8_t flag);
 uint16_t    genpshdr(struct tcphdr *tcph, uint32_t s_addr, uint8_t *local);
+void	genudphdr(char **pkt, int port, char *addr, char *host);
 
 /*		errors.c			*/
 void	clean_env(t_opt *opt);
