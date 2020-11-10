@@ -49,6 +49,8 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 	pthread_mutex_lock(((t_probe_arg*)args)->lock);
 	printf("%s %d\n", result->ip, result->port);
 	pthread_mutex_unlock(((t_probe_arg*)args)->lock);
+
+	// OLD VERSION
 	
 	/*FILE 				*logfile = (FILE *)(((t_probe_arg*)args)->logfile);
 	int					str_len = 256;
@@ -202,7 +204,6 @@ static int	wait_response(t_thread_arg *targs)
 		return (1);
 	}
 	ft_bzero(args, sizeof(t_probe_arg));
-	args->logfile = targs->opt->logfile;
 	args->lock = targs->opt->lock;
 	result = &targs->opt->results[targs->ip_idx][targs->port_idx];
 	args->result = result;
@@ -219,16 +220,9 @@ static int	wait_response(t_thread_arg *targs)
 		{
 			pcap_breakloop(targs->opt->sockets[targs->sock_id]->handle);
 			pthread_mutex_lock(((t_probe_arg*)args)->lock);
-			printf("%s %d\n", result->ip, result->port);
+			printf("TIMEOUT %s %d\n", result->ip, result->port);
+			//result->states = ;
 			pthread_mutex_unlock(((t_probe_arg*)args)->lock);
-			//ft_bzero(str, str_len);
-			//sprintf(str, "Probe Timeout on port %d with %d scan, %d\n", targs->port, targs->scan, ret);
-			//ft_strcat(str, "------------------------\n");
-			//pthread_mutex_lock(targs->opt->lock);
-			//if (targs->opt->logfile)
-			//	fwrite(str, 1, 1, targs->opt->logfile);
-			//printf("%s", str);
-			//pthread_mutex_unlock(targs->opt->lock);
 			break;
 		}
 	}

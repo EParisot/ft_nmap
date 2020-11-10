@@ -99,7 +99,6 @@ typedef struct		s_thread_arg
 
 typedef struct		s_probe_arg
 {
-	FILE			*logfile;
 	pthread_mutex_t	*lock;
 	uint8_t			scan;
 	t_result		*result;
