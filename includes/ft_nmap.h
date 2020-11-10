@@ -100,8 +100,10 @@ typedef struct		s_probe_arg
 {
 	FILE			*logfile;
 	pthread_mutex_t	*lock;
+	char			*addr;
 	int32_t			port;
 	uint8_t			scan;
+	t_result		**results;
 }					t_probe_arg;
 
 typedef struct 		s_psh

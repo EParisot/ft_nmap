@@ -17,10 +17,11 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 	FILE 				*logfile = (FILE *)(((t_probe_arg*)args)->logfile);
 	//int					port = (int)(((t_probe_arg*)args)->port);
 	//uint8_t				scan = (uint8_t)(((t_probe_arg*)args)->scan);
+	//t_result			**results = (t_result **)(((t_probe_arg*)args)->results);
 	int					str_len = 256;
 	char				str[str_len];
 	int 				buf_len = 1024;
-	char				*buf = (char*)malloc(buf_len);	
+	char				*buf = (char*)malloc(buf_len);
 
 	const struct ip* iphdr;
 	const struct tcphdr* tcphdr;
@@ -146,13 +147,12 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	char			str_addr[INET_ADDRSTRLEN];
 	char			str_filter[64];
 	t_probe_arg		*args;
-	//int				str_len = 64;
+	//int			str_len = 64;
 	//char			str[str_len];
 	struct timeval 	start;
 	struct timeval 	curr;
 	int				ret = 0;
 
-	ft_bzero(str_addr, INET_ADDRSTRLEN);
 	ft_bzero(str_filter, 64);
 	ft_strcat(str_filter, "dst host ");
 	ft_strcat(str_filter, (char*)opt->localhost);
@@ -170,11 +170,12 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 		printf("ft_nmap: Error probe failed malloc\n");
 		return (1);
 	}
-	args->logfile = opt->logfile;
+	ft_strcpy(inet_ntoa(addr->sin_addr), str_addr);
 	args->lock = opt->lock;
+	args->addr = str_addr;
 	args->port = port;
 	args->scan = scan;
-	(void)addr;
+	args->results = opt->results;
 	pcap_setnonblock(opt->sockets[sock_id]->handle, 1, NULL);
 	gettimeofday(&start, NULL);
 	while (1)
