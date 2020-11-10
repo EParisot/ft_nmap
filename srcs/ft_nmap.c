@@ -15,6 +15,7 @@
 static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *header, const uint8_t *packet)
 {
 	FILE 				*logfile = (FILE *)(((t_probe_arg*)args)->logfile);
+	//char					*addr = (char*)(((t_probe_arg*)args)->addr);
 	//int					port = (int)(((t_probe_arg*)args)->port);
 	//uint8_t				scan = (uint8_t)(((t_probe_arg*)args)->scan);
 	//t_result			**results = (t_result **)(((t_probe_arg*)args)->results);
@@ -147,8 +148,8 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	char			str_addr[INET_ADDRSTRLEN];
 	char			str_filter[64];
 	t_probe_arg		*args;
-	//int			str_len = 64;
-	//char			str[str_len];
+	int			str_len = 64;
+	char			str[str_len];
 	struct timeval 	start;
 	struct timeval 	curr;
 	int				ret = 0;
@@ -161,7 +162,7 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	ft_strcat(str_filter, str_port);
 	free(str_port);
 
-	//printf("%s\n", str_filter);
+	printf("%s\n", str_filter);
 
 	if (nmap_pcapsetup(opt, sock_id, str_filter) == -1)
 		return (-1);
@@ -170,7 +171,9 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 		printf("ft_nmap: Error probe failed malloc\n");
 		return (1);
 	}
+	ft_bzero(str_addr, INET_ADDRSTRLEN);
 	ft_strcpy(inet_ntoa(addr->sin_addr), str_addr);
+	args->logfile = opt->logfile;
 	args->lock = opt->lock;
 	args->addr = str_addr;
 	args->port = port;
@@ -187,14 +190,14 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 		if ((curr.tv_sec - start.tv_sec) > TIMEOUT)
 		{
 			pcap_breakloop(opt->sockets[sock_id]->handle);
-			/*ft_bzero(str, str_len);
+			ft_bzero(str, str_len);
 			sprintf(str, "Probe Timeout on port %d with %d scan, %d\n", port, scan, ret);
 			ft_strcat(str, "------------------------\n");
 			pthread_mutex_lock(opt->lock);
 			if (opt->logfile)
 				fwrite(str, 1, 1, opt->logfile);
 			printf("%s", str);
-			pthread_mutex_unlock(opt->lock);*/
+			pthread_mutex_unlock(opt->lock);
 			break;
 		}
 	}
