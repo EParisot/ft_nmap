@@ -116,7 +116,6 @@ static t_device *init_ndevice()
 
 static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* filter)
 {
-	//pthread_mutex_lock(opt->lock);
     if (pcap_lookupnet(opt->dev->device, &(opt->dev->ip), &(opt->dev->subnet_mask), opt->dev->errbuf) == -1)
     {
         printf("ft_nmap: Could not get information for device: %s\n", opt->dev->device);
@@ -139,7 +138,6 @@ static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* filter)
         printf("ft_nmap: Error setting filter - %s\n", pcap_geterr(opt->sockets[sock_id]->handle));
         return (-1);
     }
-	//pthread_mutex_unlock(opt->lock);
     return (1);
 }
 
