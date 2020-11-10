@@ -146,8 +146,8 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	char			str_addr[INET_ADDRSTRLEN];
 	char			str_filter[64];
 	t_probe_arg		*args;
-	int			str_len = 64;
-	char			str[str_len];
+	//int				str_len = 64;
+	//char			str[str_len];
 	struct timeval 	start;
 	struct timeval 	curr;
 	int				ret = 0;
@@ -161,7 +161,7 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 	ft_strcat(str_filter, str_port);
 	free(str_port);
 
-	printf("%s\n", str_filter);
+	//printf("%s\n", str_filter);
 
 	if (nmap_pcapsetup(opt, sock_id, str_filter) == -1)
 		return (-1);
@@ -186,11 +186,14 @@ static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int 
 		if ((curr.tv_sec - start.tv_sec) > TIMEOUT)
 		{
 			pcap_breakloop(opt->sockets[sock_id]->handle);
-			ft_bzero(str, str_len);
+			/*ft_bzero(str, str_len);
 			sprintf(str, "Probe Timeout on port %d with %d scan, %d\n", port, scan, ret);
+			ft_strcat(str, "------------------------\n");
+			pthread_mutex_lock(opt->lock);
 			if (opt->logfile)
 				fwrite(str, 1, 1, opt->logfile);
 			printf("%s", str);
+			pthread_mutex_unlock(opt->lock);*/
 			break;
 		}
 	}
@@ -202,9 +205,7 @@ void	*probe(void *vargs)
 {
 	t_thread_arg *args = (t_thread_arg *)vargs;
 	send_probe(args->opt, args->ip, args->port, args->scan, args->opt->sockets[args->sock_id]->sock_fd);
-	//pthread_mutex_lock(args->opt->lock);
 	wait_response(args->opt, args->sock_id, args->ip, args->port, args->scan);
-	//pthread_mutex_unlock(args->opt->lock);
 	args->opt->sockets[args->sock_id]->available = 1;
 	pcap_close(args->opt->sockets[args->sock_id]->handle);
 	pcap_freecode(&(args->opt->sockets[args->sock_id]->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
@@ -228,9 +229,12 @@ static int	nmap_sender(t_opt *opt)
 	t_list	*tmp_port;
 	int 	sock_id = 0;
 	int		proto = IPPROTO_TCP;
+	struct timeval 	start;
+	struct timeval 	end;
 
 	g_stop = false;
 	signal(SIGINT, sig_handler);
+	gettimeofday(&start, NULL);
 	if ((opt->lock = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t))) == NULL)
 	{
 		printf("ft_nmap: Error mutex malloc failed\n");
@@ -244,6 +248,13 @@ static int	nmap_sender(t_opt *opt)
 	// creates sockets
 	if ((opt->sockets = (t_socket **)malloc(opt->threads * sizeof(t_socket*))) == NULL)
 		return (-1);
+
+	// creates results
+	if ((opt->results = (t_result **)malloc(ft_lstcount(opt->ips) * sizeof(t_result *))) == NULL)
+		return (-1);
+	for (size_t i = 0; i < ft_lstcount(opt->ips); i++)
+		if ((opt->results[i] = (t_result *)malloc(ft_lstcount(opt->ports) * sizeof(t_result))) == NULL)
+			return (-1);
 
 	// nmap loop
 	for (int scan = (1 << 1); scan < 0xFF && g_stop == false; scan = scan << 1)
@@ -274,9 +285,9 @@ static int	nmap_sender(t_opt *opt)
 				while (tmp_port && g_stop == false)
 				{
 					while (g_stop == false)
-					{//printf("try %d\n", *(int *)(tmp_port->content));
+					{
 						if (opt->sockets[sock_id]->available == 1)
-						{//printf("sending to %d\n", *(int *)(tmp_port->content));
+						{
 							t_thread_arg *args;
 
 							if ((args = (t_thread_arg *)malloc(sizeof(t_thread_arg))) == NULL)
@@ -315,9 +326,12 @@ static int	nmap_sender(t_opt *opt)
 			}
 		}
 	}
+	gettimeofday(&end, NULL);
 	pthread_mutex_destroy(opt->lock);
 	free(opt->lock);
 	free(opt->sockets);
+	printf("\n# ft_nmap done -- %ld IP address ( host up) scanned in %.2f seconds\n", ft_lstcount(opt->ips) , \
+		(float)((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)) / 1000000);
 	return (0);
 }
 

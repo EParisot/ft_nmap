@@ -16,7 +16,7 @@
 
 # define _POSIX_C_SOURCE 1 // for fileno()
 # define NPACKETS 1 // for pcap_loop()
-# define TIMEOUT 5
+# define TIMEOUT 1
 
 # include "../libft/libft.h"
 # include <stdlib.h>
@@ -57,7 +57,15 @@ typedef struct			s_socket
 	struct bpf_program  filter;
 }						t_socket;
 
-typedef struct  s_opt
+typedef struct	s_result
+{
+	char		*ip;
+	uint8_t		scan;
+	int 		port;
+	int			state;
+}				t_result;
+
+typedef struct  	s_opt
 {
 	uint8_t			*localhost;
     uint8_t     	threads;    /* 250 threads rentrent large dans un uint8_t */
@@ -69,41 +77,42 @@ typedef struct  s_opt
 	t_socket		**sockets;
 	FILE			*logfile;
 	pthread_mutex_t	*lock;
-}               t_opt;
+	t_result		**results;
+}               	t_opt;
 
-typedef struct	s_range
+typedef struct		s_range
 {
 	int32_t			start;
-	int32_t		end;
-}				t_range;
+	int32_t			end;
+}					t_range;
 
-typedef struct	s_thread_arg
+typedef struct		s_thread_arg
 {
 	t_opt				*opt;
-	int32_t					sock_id;
+	int32_t				sock_id;
 	struct sockaddr_in	*ip;
-	int32_t					port;
+	int32_t				port;
 	uint8_t				scan;
 	pthread_mutex_t		*lock;
-}				t_thread_arg;
+}					t_thread_arg;
 
-typedef struct	s_probe_arg
+typedef struct		s_probe_arg
 {
 	FILE			*logfile;
 	pthread_mutex_t	*lock;
 	int32_t			port;
 	uint8_t			scan;
-}				t_probe_arg;
+}					t_probe_arg;
 
-typedef struct s_psh
+typedef struct 		s_psh
 {
-	u_int32_t source_address;
-	u_int32_t dest_address;
-	u_int8_t placeholder;
-	u_int8_t protocol;
-	u_int16_t tcp_length;
-    struct tcphdr tcp;
-}               t_psh;
+	u_int32_t 		source_address;
+	u_int32_t 		dest_address;
+	u_int8_t 		placeholder;
+	u_int8_t 		protocol;
+	u_int16_t 		tcp_length;
+    struct tcphdr 	tcp;
+}               	t_psh;
 
 typedef struct s_udppsh
 {
