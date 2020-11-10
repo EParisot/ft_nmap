@@ -14,11 +14,43 @@
 
 static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *header, const uint8_t *packet)
 {
-	FILE 				*logfile = (FILE *)(((t_probe_arg*)args)->logfile);
-	//char					*addr = (char*)(((t_probe_arg*)args)->addr);
-	//int					port = (int)(((t_probe_arg*)args)->port);
-	//uint8_t				scan = (uint8_t)(((t_probe_arg*)args)->scan);
-	//t_result			**results = (t_result **)(((t_probe_arg*)args)->results);
+	t_result			*result = (t_result *)(((t_probe_arg*)args)->result);
+
+	//result->states = ;
+
+	const struct ip* iphdr;
+	//const struct tcphdr* tcphdr;
+	//const struct icmp* icmphdr;
+	//const struct udphdr* udphdr;
+	//char iphi[256], srcip[256], dstip[256];
+	(void)header;
+
+	packet += 14;
+	iphdr = (struct ip*)packet;
+	//ft_strcpy(srcip, inet_ntoa(iphdr->ip_src));
+	//ft_strcpy(dstip, inet_ntoa(iphdr->ip_dst));
+
+	packet += 4*iphdr->ip_hl;
+	switch (iphdr->ip_p)
+	{
+		case IPPROTO_TCP:
+			//tcphdr = (struct tcphdr*)packet;
+			break;
+
+		case IPPROTO_UDP:
+			//udphdr = (struct udphdr*)packet;
+			break;
+
+		case IPPROTO_ICMP:
+			//icmphdr = (struct icmp*)packet;
+			break;
+	}
+
+	pthread_mutex_lock(((t_probe_arg*)args)->lock);
+	printf("%s %d\n", result->ip, result->port);
+	pthread_mutex_unlock(((t_probe_arg*)args)->lock);
+	
+	/*FILE 				*logfile = (FILE *)(((t_probe_arg*)args)->logfile);
 	int					str_len = 256;
 	char				str[str_len];
 	int 				buf_len = 1024;
@@ -95,7 +127,7 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 		fwrite(buf, ft_strlen(buf), 1, logfile);
 	printf("%s", buf);
 	pthread_mutex_unlock(((t_probe_arg*)args)->lock);
-	free(buf);
+	free(buf);*/
 }
 
 static t_device *init_ndevice()
@@ -141,61 +173,62 @@ static inline int   nmap_pcapsetup(t_opt *opt, int sock_id, char* filter)
     return (1);
 }
 
-static int	wait_response(t_opt *opt, int sock_id, struct sockaddr_in *addr, int port, uint8_t scan)
+static int	wait_response(t_thread_arg *targs)
 {
-	char			str_addr[INET_ADDRSTRLEN];
 	char			str_filter[64];
 	t_probe_arg		*args;
-	int			str_len = 64;
-	char			str[str_len];
+	//int				str_len = 64;
+	//char			str[str_len];
 	struct timeval 	start;
 	struct timeval 	curr;
+	t_result		*result;
 	int				ret = 0;
 
 	ft_bzero(str_filter, 64);
 	ft_strcat(str_filter, "dst host ");
-	ft_strcat(str_filter, (char*)opt->localhost);
+	ft_strcat(str_filter, (char*)targs->opt->localhost);
 	ft_strcat(str_filter, " and src port ");
-	char *str_port = ft_itoa(port);
+	char *str_port = ft_itoa(targs->port);
 	ft_strcat(str_filter, str_port);
 	free(str_port);
 
-	printf("%s\n", str_filter);
+	//printf("%s\n", str_filter);
 
-	if (nmap_pcapsetup(opt, sock_id, str_filter) == -1)
+	if (nmap_pcapsetup(targs->opt, targs->sock_id, str_filter) == -1)
 		return (-1);
 	if ((args = (t_probe_arg*)malloc(sizeof(t_probe_arg))) == NULL)
 	{
 		printf("ft_nmap: Error probe failed malloc\n");
 		return (1);
 	}
-	ft_bzero(str_addr, INET_ADDRSTRLEN);
-	ft_strcpy(inet_ntoa(addr->sin_addr), str_addr);
-	args->logfile = opt->logfile;
-	args->lock = opt->lock;
-	args->addr = str_addr;
-	args->port = port;
-	args->scan = scan;
-	args->results = opt->results;
-	pcap_setnonblock(opt->sockets[sock_id]->handle, 1, NULL);
+	ft_bzero(args, sizeof(t_probe_arg));
+	args->logfile = targs->opt->logfile;
+	args->lock = targs->opt->lock;
+	result = &targs->opt->results[targs->ip_idx][targs->port_idx];
+	args->result = result;
+	args->scan = targs->scan;
+	pcap_setnonblock(targs->opt->sockets[targs->sock_id]->handle, 1, NULL);
 	gettimeofday(&start, NULL);
 	while (1)
 	{
-		ret = pcap_dispatch(opt->sockets[sock_id]->handle, 1, my_packet_handler, (uint8_t *)args);
+		ret = pcap_dispatch(targs->opt->sockets[targs->sock_id]->handle, 1, my_packet_handler, (uint8_t *)args);
 		if (ret)
 			break;
 		gettimeofday(&curr, NULL);
 		if ((curr.tv_sec - start.tv_sec) > TIMEOUT)
 		{
-			pcap_breakloop(opt->sockets[sock_id]->handle);
-			ft_bzero(str, str_len);
-			sprintf(str, "Probe Timeout on port %d with %d scan, %d\n", port, scan, ret);
-			ft_strcat(str, "------------------------\n");
-			pthread_mutex_lock(opt->lock);
-			if (opt->logfile)
-				fwrite(str, 1, 1, opt->logfile);
-			printf("%s", str);
-			pthread_mutex_unlock(opt->lock);
+			pcap_breakloop(targs->opt->sockets[targs->sock_id]->handle);
+			pthread_mutex_lock(((t_probe_arg*)args)->lock);
+			printf("%s %d\n", result->ip, result->port);
+			pthread_mutex_unlock(((t_probe_arg*)args)->lock);
+			//ft_bzero(str, str_len);
+			//sprintf(str, "Probe Timeout on port %d with %d scan, %d\n", targs->port, targs->scan, ret);
+			//ft_strcat(str, "------------------------\n");
+			//pthread_mutex_lock(targs->opt->lock);
+			//if (targs->opt->logfile)
+			//	fwrite(str, 1, 1, targs->opt->logfile);
+			//printf("%s", str);
+			//pthread_mutex_unlock(targs->opt->lock);
 			break;
 		}
 	}
@@ -207,7 +240,7 @@ void	*probe(void *vargs)
 {
 	t_thread_arg *args = (t_thread_arg *)vargs;
 	send_probe(args->opt, args->ip, args->port, args->scan, args->opt->sockets[args->sock_id]->sock_fd);
-	wait_response(args->opt, args->sock_id, args->ip, args->port, args->scan);
+	wait_response(args);
 	args->opt->sockets[args->sock_id]->available = 1;
 	pcap_close(args->opt->sockets[args->sock_id]->handle);
 	pcap_freecode(&(args->opt->sockets[args->sock_id]->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
@@ -233,6 +266,8 @@ static int	nmap_sender(t_opt *opt)
 	int		proto = IPPROTO_TCP;
 	struct timeval 	start;
 	struct timeval 	end;
+	size_t			ip_idx = 0;
+	size_t			port_idx = 0;
 
 	g_stop = false;
 	signal(SIGINT, sig_handler);
@@ -254,13 +289,27 @@ static int	nmap_sender(t_opt *opt)
 	// creates results
 	if ((opt->results = (t_result **)malloc(ft_lstcount(opt->ips) * sizeof(t_result *))) == NULL)
 		return (-1);
+	tmp_ips = opt->ips;
+	tmp_port = opt->ports;
 	for (size_t i = 0; i < ft_lstcount(opt->ips); i++)
+	{
 		if ((opt->results[i] = (t_result *)malloc(ft_lstcount(opt->ports) * sizeof(t_result))) == NULL)
 			return (-1);
+		for (size_t p = 0; p < ft_lstcount(opt->ports); p++)
+		{
+			opt->results[i][p].port = *(int*)tmp_port->content;
+			ft_strcpy(opt->results[i][p].ip, inet_ntoa(((struct sockaddr_in*)tmp_ips->content)->sin_addr));
+			tmp_port = tmp_port->next;
+		}
+		tmp_ips = tmp_ips->next;
+		tmp_port = opt->ports;
+	}
 
 	// nmap loop
 	for (int scan = (1 << 1); scan < 0xFF && g_stop == false; scan = scan << 1)
 	{
+		ip_idx = 0;
+		port_idx = 0;
 		tmp_ips = opt->ips;
 		tmp_port = opt->ports;
 		if (scan & opt->scanflag)
@@ -284,6 +333,7 @@ static int	nmap_sender(t_opt *opt)
 			// loop over ip / ports
 			while (tmp_ips && g_stop == false)
 			{
+				port_idx = 0;
 				while (tmp_port && g_stop == false)
 				{
 					while (g_stop == false)
@@ -299,6 +349,8 @@ static int	nmap_sender(t_opt *opt)
 							args->ip = (struct sockaddr_in *)(tmp_ips->content);
 							args->port = *(int *)(tmp_port->content);
 							args->scan = scan & opt->scanflag;
+							args->ip_idx = ip_idx;
+							args->port_idx = port_idx;
 							opt->sockets[sock_id]->available = 0;
 							if (pthread_create(opt->sockets[sock_id]->thread, NULL, probe, (void *)args))
 							{
@@ -313,9 +365,11 @@ static int	nmap_sender(t_opt *opt)
 							sock_id++;
 					}
 					tmp_port = tmp_port->next;
+					port_idx += 1;
 				}
 				tmp_port = opt->ports;
 				tmp_ips = tmp_ips->next;
+				ip_idx += 1;
 			}
 			// clean sockets
 			for (int i = 0; i < opt->threads; i++)
