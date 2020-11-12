@@ -61,7 +61,7 @@ typedef struct	s_result
 {
 	char		ip[INET_ADDRSTRLEN];
 	int 		port;
-	char		states[6];
+	char		states[7];
 }				t_result;
 
 typedef struct  	s_opt
@@ -94,6 +94,7 @@ typedef struct		s_thread_arg
 	uint8_t				scan;
 	size_t				ip_idx;
 	size_t				port_idx;
+	size_t				scan_idx;
 	pthread_mutex_t		*lock;
 }					t_thread_arg;
 
@@ -102,6 +103,7 @@ typedef struct		s_probe_arg
 	pthread_mutex_t	*lock;
 	uint8_t			scan;
 	t_result		*result;
+	size_t			scan_idx;
 }					t_probe_arg;
 
 typedef struct 		s_psh

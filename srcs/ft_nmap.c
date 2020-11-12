@@ -47,7 +47,8 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 	}
 
 	pthread_mutex_lock(((t_probe_arg*)args)->lock);
-	printf("%s %d\n", result->ip, result->port);
+	result->states[((t_probe_arg*)args)->scan_idx] = '*';
+	//printf("%s %d\n", result->ip, result->port);
 	pthread_mutex_unlock(((t_probe_arg*)args)->lock);
 
 	// OLD VERSION
@@ -208,6 +209,7 @@ static int	wait_response(t_thread_arg *targs)
 	result = &targs->opt->results[targs->ip_idx][targs->port_idx];
 	args->result = result;
 	args->scan = targs->scan;
+	args->scan_idx = targs->scan_idx;
 	pcap_setnonblock(targs->opt->sockets[targs->sock_id]->handle, 1, NULL);
 	gettimeofday(&start, NULL);
 	while (1)
@@ -220,8 +222,8 @@ static int	wait_response(t_thread_arg *targs)
 		{
 			pcap_breakloop(targs->opt->sockets[targs->sock_id]->handle);
 			pthread_mutex_lock(((t_probe_arg*)args)->lock);
-			printf("TIMEOUT %s %d\n", result->ip, result->port);
-			//result->states = ;
+			//printf("TIMEOUT %s %d\n", result->ip, result->port);
+			result->states[targs->scan_idx] = 'T';
 			pthread_mutex_unlock(((t_probe_arg*)args)->lock);
 			break;
 		}
@@ -252,6 +254,18 @@ void		sig_handler(int num_sig)
 	return ;
 }
 
+void	print_results(t_opt *opt)
+{
+	for (size_t i = 0; i < ft_lstcount(opt->ips); i++)
+	{
+		printf("ip: %s\n", opt->results[i][0].ip);
+		for (size_t p = 0; p < ft_lstcount(opt->ports); p++)
+		{
+			printf("port : %d -> %s\n", opt->results[i][p].port, opt->results[i][p].states);
+		}
+	}
+}
+
 static int	nmap_sender(t_opt *opt)
 {
 	t_list	*tmp_ips;
@@ -262,6 +276,7 @@ static int	nmap_sender(t_opt *opt)
 	struct timeval 	end;
 	size_t			ip_idx = 0;
 	size_t			port_idx = 0;
+	size_t			scan_idx = 0;
 
 	g_stop = false;
 	signal(SIGINT, sig_handler);
@@ -293,6 +308,7 @@ static int	nmap_sender(t_opt *opt)
 		{
 			opt->results[i][p].port = *(int*)tmp_port->content;
 			ft_strcpy(opt->results[i][p].ip, inet_ntoa(((struct sockaddr_in*)tmp_ips->content)->sin_addr));
+			ft_bzero(opt->results[i][p].states, 7);
 			tmp_port = tmp_port->next;
 		}
 		tmp_ips = tmp_ips->next;
@@ -345,6 +361,7 @@ static int	nmap_sender(t_opt *opt)
 							args->scan = scan & opt->scanflag;
 							args->ip_idx = ip_idx;
 							args->port_idx = port_idx;
+							args->scan_idx = scan_idx;
 							opt->sockets[sock_id]->available = 0;
 							if (pthread_create(opt->sockets[sock_id]->thread, NULL, probe, (void *)args))
 							{
@@ -359,11 +376,11 @@ static int	nmap_sender(t_opt *opt)
 							sock_id++;
 					}
 					tmp_port = tmp_port->next;
-					port_idx += 1;
+					port_idx++;
 				}
 				tmp_port = opt->ports;
 				tmp_ips = tmp_ips->next;
-				ip_idx += 1;
+				ip_idx++;
 			}
 			// clean sockets
 			for (int i = 0; i < opt->threads; i++)
@@ -375,26 +392,16 @@ static int	nmap_sender(t_opt *opt)
 				free(opt->sockets[i]);
 			}
 		}
+		scan_idx++;
 	}
 	gettimeofday(&end, NULL);
 	pthread_mutex_destroy(opt->lock);
 	free(opt->lock);
 	free(opt->sockets);
+	print_results(opt);
 	printf("\n# ft_nmap done -- %ld IP address ( host up) scanned in %.2f seconds\n", ft_lstcount(opt->ips) , \
 		(float)((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)) / 1000000);
 	return (0);
-}
-
-void	print_results(t_opt *opt)
-{
-	for (size_t i = 0; i < ft_lstcount(opt->ips); i++)
-	{
-		printf("ip: %s\n", opt->results[i][0].ip);
-		for (size_t p = 0; p < ft_lstcount(opt->ports); p++)
-		{
-			printf("port : %d -> %s\n", opt->results[i][p].port, opt->results[i][p].states);
-		}
-	}
 }
 
 int		nmap_wrapper(t_opt *opt)
@@ -411,7 +418,6 @@ int		nmap_wrapper(t_opt *opt)
 		// send probes
 		if (nmap_sender(opt))
 			return (-1);
-		//print_results(opt);
 	}
 	else
 	{
