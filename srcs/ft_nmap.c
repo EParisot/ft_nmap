@@ -385,16 +385,33 @@ static int	nmap_sender(t_opt *opt)
 	return (0);
 }
 
+void	print_results(t_opt *opt)
+{
+	for (size_t i = 0; i < ft_lstcount(opt->ips); i++)
+	{
+		printf("ip: %s\n", opt->results[i][0].ip);
+		for (size_t p = 0; p < ft_lstcount(opt->ports); p++)
+		{
+			printf("port : %d -> %s\n", opt->results[i][p].port, opt->results[i][p].states);
+		}
+	}
+}
+
 int		nmap_wrapper(t_opt *opt)
 {	
 	if ((opt->dev = init_ndevice()) == NULL)
 		return (-1);
 	if (getuid() == 0)
 	{
-		opt->localhost = getlocalhost(opt);
+		if ((opt->localhost = getlocalhost(opt)) == NULL)
+		{
+			printf("ft_nmap error: Please check your network connection !\n");
+			return (-1);
+		}
 		// send probes
 		if (nmap_sender(opt))
 			return (-1);
+		//print_results(opt);
 	}
 	else
 	{
