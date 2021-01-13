@@ -16,6 +16,7 @@
 
 # define _POSIX_C_SOURCE 1 // for fileno()
 # define NPACKETS 1 // for pcap_loop()
+# define TIMEOUT 10
 
 # include "../libft/libft.h"
 # include <stdlib.h>
@@ -30,6 +31,7 @@
 # include <pthread.h> // for threads
 # include <ifaddrs.h> // for getifaddr and ifaddr structcs
 # include <netinet/ip.h> // for iphdr struct
+# include <netinet/ip_icmp.h> // for iphdr struct
 # include <netinet/tcp.h> // for tcphdr struct
 #include<netinet/udp.h>
 # include <signal.h>
@@ -48,16 +50,23 @@ typedef struct          s_device
 
 typedef struct			s_socket
 {
-	int					sock_fd;
-	int					available;
+	int32_t				sock_fd;
+	int32_t				available;
 	pthread_t			*thread;
 	pcap_t      		*handle;
 	struct bpf_program  filter;
 }						t_socket;
 
-typedef struct  s_opt
+typedef struct	s_result
 {
-	char			*localhost;
+	char		ip[INET_ADDRSTRLEN];
+	int 		port;
+	char		states[7];
+}				t_result;
+
+typedef struct  	s_opt
+{
+	uint8_t			*localhost;
     uint8_t     	threads;    /* 250 threads rentrent large dans un uint8_t */
     uint8_t     	scanflag;   /* 8 bits suffisent pour caler tous les flags possibles en binaire */ 
 	t_list			*ranges;	/* ranges option */
@@ -67,32 +76,66 @@ typedef struct  s_opt
 	t_socket		**sockets;
 	FILE			*logfile;
 	pthread_mutex_t	*lock;
-}               t_opt;
+	t_result		**results;
+}               	t_opt;
 
-typedef struct	s_range
+typedef struct		s_range
 {
-	int			start;
-	int			end;
-}				t_range;
+	int32_t			start;
+	int32_t			end;
+}					t_range;
 
-typedef struct	s_thread_arg
+typedef struct		s_thread_arg
 {
 	t_opt				*opt;
-	int					sock_id;
+	int32_t				sock_id;
 	struct sockaddr_in	*ip;
-	int					port;
+	int32_t				port;
 	uint8_t				scan;
+	size_t				ip_idx;
+	size_t				port_idx;
+	size_t				scan_idx;
 	pthread_mutex_t		*lock;
-}				t_thread_arg;
+}					t_thread_arg;
 
-typedef struct	s_probe_arg
+typedef struct		s_probe_arg
 {
-	FILE			*logfile;
 	pthread_mutex_t	*lock;
-	int				port;
 	uint8_t			scan;
-}				t_probe_arg;
+	t_result		*result;
+	size_t			scan_idx;
+}					t_probe_arg;
 
+typedef struct 		s_psh
+{
+	u_int32_t 		source_address;
+	u_int32_t 		dest_address;
+	u_int8_t 		placeholder;
+	u_int8_t 		protocol;
+	u_int16_t 		tcp_length;
+    struct tcphdr 	tcp;
+}               	t_psh;
+
+typedef struct s_udppsh
+{
+    u_int32_t source_address;
+    u_int32_t dest_address;
+    u_int8_t placeholder;
+    u_int8_t protocol;
+    u_int16_t udp_length;
+}       t_udppsh;
+
+# define T_FIN 1 << 1
+# define T_SYN 1 << 2
+# define T_RST 1 << 3
+# define T_PUSH 1 << 4
+# define T_ACK 1 << 5
+# define T_URG 1 << 6
+
+void		geniphdr(struct ip *ip, uint8_t *addr, int protocol, int tot_len);
+void    	gentcphdr(struct tcphdr* tcph, int32_t port, uint8_t flag);
+uint16_t    genpshdr(struct tcphdr *tcph, uint32_t s_addr, uint8_t *local);
+void	genudphdr(char **pkt, int port, char *addr, char *host);
 
 /*		errors.c			*/
 void	clean_env(t_opt *opt);
@@ -113,17 +156,20 @@ int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, in
 /****************************/
 
 /*		netutils.c			*/
-char            *getlocalhost(t_opt *opt);
+uint8_t            *getlocalhost(t_opt *opt);
 unsigned short	csum(unsigned short *ptr, int nbytes);
 /****************************/
 
 /*		scan_*.c			*/
-int             scan_syn(t_opt *opt, int sock, char *addr, int port);
-int             scan_null(t_opt *opt, int sock, char *addr, int port);
-int             scan_xmas(t_opt *opt, int sock, char *addr, int port);
-int             scan_udp(t_opt *opt, int sock, char *addr, int port);
-int             scan_ack(t_opt *opt, int sock, char *addr, int port);
-int             scan_fin(t_opt *opt, int sock, char *addr, int port);
+int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag, int z);
+int scanudp(t_opt *opt, int sock, char *addr, int port);
 /****************************/
+
+
+int   nmap_pcapsetup(t_opt *opt, int sock_id, char* filter);
+t_device *init_ndevice();
+
+void	*probe(void *vargs);
+
 
 #endif

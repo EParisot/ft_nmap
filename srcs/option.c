@@ -155,6 +155,7 @@ static int	fread_ipaddr(t_opt *options, char *const args[], int *optind)
 			return (ret);
 		}
 	}
+	free(ipbuf);
 	fclose(fp);
 	(*optind)++;
 	return (0);
@@ -399,6 +400,13 @@ int     nmap_optloop(t_opt *options, int nargs, char *const args[])
 	if (set_defaults(options))
 		return (-1);
 	if (ret != -1)
+	{
+		printf("# ft_nmap scan initiated as: ");
+		for (int i = 0; i < nargs; ++i)
+			printf("%s ", args[i]);
+		printf("\n\n");
 		print_summary(options);
+		printf("\n");
+	}
 	return (ret);
 }

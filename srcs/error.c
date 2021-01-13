@@ -20,6 +20,12 @@ void	del(void *addr, size_t size)
 
 void	clean_env(t_opt *opt)
 {
+	if (opt->results)
+	{
+		for (size_t i = 0; i < ft_lstcount(opt->ips); i++)
+			free(opt->results[i]);
+		free(opt->results);
+	}
 	if (opt->ranges)
 		ft_lstdel(&opt->ranges, del);
 	if (opt->ports)

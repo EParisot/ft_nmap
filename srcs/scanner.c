@@ -14,29 +14,33 @@
 
 int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, int sock)
 {
-	char	str_addr[INET_ADDRSTRLEN];
+	uint8_t	str_addr[INET_ADDRSTRLEN];
 
 	ft_bzero(str_addr, INET_ADDRSTRLEN);
-	inet_ntop(AF_INET, &addr->sin_addr, str_addr, INET_ADDRSTRLEN);
+	inet_ntop(AF_INET, &addr->sin_addr, (char*)str_addr, INET_ADDRSTRLEN);
+    // si on a un scan tcp fin/null/xmas il faut envoyer ca au prealable
+        scantcp(opt, sock, str_addr, port, T_SYN, 1);
+        scantcp(opt, sock, str_addr, port, T_ACK, 1);
+    // on envoie 3 probes a chaque fois maintenant
     switch((char)scan)
     {
         case (1 << (1)):
-            scan_syn(opt, sock, str_addr, port);
+            scantcp(opt, sock, str_addr, port, T_SYN, 2);
             break ;
-        case (1 << 2):
-            scan_null(opt, sock, str_addr, port);
+        case (1 << (2)):
+            scantcp(opt, sock, str_addr, port, 0, 2);
             break ;
         case (1 << (3)):
-            scan_ack(opt, sock, str_addr, port);
+            scantcp(opt, sock, str_addr, port, T_ACK, 2);
             break ;
         case (1 << (4)):
-            scan_fin(opt, sock, str_addr, port);
+            scantcp(opt, sock, str_addr, port, T_FIN, 2);
             break ;
         case (1 << (5)):
-            scan_xmas(opt, sock, str_addr, port);
+            scantcp(opt, sock, str_addr, port, T_FIN | T_PUSH | T_URG, 2);
             break ;
         case (1 << (6)):
-            scan_udp(opt, sock, str_addr, port);
+            scanudp(opt, sock, (char*)str_addr, port);
             break ;
         default:
             printf("already scannedall\n");

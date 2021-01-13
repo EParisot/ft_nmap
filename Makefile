@@ -13,17 +13,15 @@
 NAME	=	ft_nmap
 
 SRCS	=	srcs/main.c				\
-			srcs/options.c			\
+			srcs/option.c			\
 			srcs/ft_nmap.c			\
-			srcs/packets_forge.c	\
-			srcs/errors.c			\
-			srcs/netutils.c			\
-			srcs/scan_null.c		\
-			srcs/scan_syn.c			\
-			srcs/scan_ack.c			\
-			srcs/scan_fin.c			\
-			srcs/scan_udp.c			\
-			srcs/scan_xmas.c		
+			srcs/scanner.c			\
+			srcs/error.c			\
+			srcs/netutil.c			\
+			srcs/sender.c			\
+			srcs/header.c			\
+			srcs/probe.c			\
+			srcs/pcaputil.c
 
 INC		=	includes/ft_nmap.h
 
