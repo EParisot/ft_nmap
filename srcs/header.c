@@ -2,9 +2,9 @@
 
 void    gentcphdr(struct tcphdr *tcph, int32_t port, uint8_t flag)
 {
-    tcph->source = htons(9001);
+    tcph->source = htons(port);
 	tcph->dest = htons(port);
-	tcph->seq = htonl(123456);
+	tcph->seq = 0;
 	tcph->ack_seq = 0;
 	tcph->doff = sizeof(struct tcphdr) / 4;
 	tcph->fin= (flag & T_FIN) ? 1 : 0;
@@ -57,7 +57,7 @@ void	genudphdr(char **pkt, int port, char *addr, char *host)
 	t_udppsh   psh;
 	char *pseudogram;
 
-	udph->source = htons(9001);
+	udph->source = htons(port);
     udph->dest = htons(port);
     udph->len = htons(8);
     udph->check = 0;

@@ -16,7 +16,7 @@
 
 # define _POSIX_C_SOURCE 1 // for fileno()
 # define NPACKETS 1 // for pcap_loop()
-# define TIMEOUT 1
+# define TIMEOUT 10
 
 # include "../libft/libft.h"
 # include <stdlib.h>
@@ -164,5 +164,12 @@ unsigned short	csum(unsigned short *ptr, int nbytes);
 int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag, int z);
 int scanudp(t_opt *opt, int sock, char *addr, int port);
 /****************************/
+
+
+int   nmap_pcapsetup(t_opt *opt, int sock_id, char* filter);
+t_device *init_ndevice();
+
+void	*probe(void *vargs);
+
 
 #endif
