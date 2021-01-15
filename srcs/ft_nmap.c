@@ -12,17 +12,17 @@
 
 #include "../includes/ft_nmap.h"
 
-void		sig_handler(int num_sig)
+void sig_handler(int num_sig)
 {
 	if (num_sig == SIGINT)
 	{
 		printf("SIGINT, waiting for timeouts to finish...\n");
 		g_stop = true;
 	}
-	return ;
+	return;
 }
 
-void	print_results(t_opt *opt)
+void print_results(t_opt *opt)
 {
 	printf("%u and ports: %u\n", (unsigned int)ft_lstcount(opt->ips), (unsigned int)ft_lstcount(opt->ports));
 	for (size_t i = 0; i < ft_lstcount(opt->ips); i++)
@@ -30,22 +30,31 @@ void	print_results(t_opt *opt)
 		printf("ip: %s\n", opt->results[i][0].ip);
 		for (size_t p = 0; p < ft_lstcount(opt->ports); p++)
 		{
-			printf("port : %d -> %s\n", opt->results[i][p].port, opt->results[i][p].states);
+			printf("port : %d -> ", opt->results[i][p].port);
+			for (size_t s = 0; s < 6; ++s)
+			{
+				if (s < 5)
+					printf(",");
+				if (opt->results[i][p].states[s])
+					printf(" ");
+				printf("%c", opt->results[i][p].states[s]);
+			}
+			printf("\n");
 		}
 	}
 }
 
-static int	nmap_sender(t_opt *opt)
+static int nmap_sender(t_opt *opt)
 {
-	t_list	*tmp_ips;
-	t_list	*tmp_port;
-	int 	sock_id = 0;
-	int		proto = IPPROTO_TCP;
-	struct timeval 	start;
-	struct timeval 	end;
-	size_t			ip_idx = 0;
-	size_t			port_idx = 0;
-	size_t			scan_idx = 0;
+	t_list *tmp_ips;
+	t_list *tmp_port;
+	int sock_id = 0;
+	int proto = IPPROTO_TCP;
+	struct timeval start;
+	struct timeval end;
+	size_t ip_idx = 0;
+	size_t port_idx = 0;
+	size_t scan_idx = 0;
 
 	g_stop = false;
 	signal(SIGINT, sig_handler);
@@ -53,15 +62,15 @@ static int	nmap_sender(t_opt *opt)
 	if ((opt->lock = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t))) == NULL)
 	{
 		printf("ft_nmap: Error mutex malloc failed\n");
-        return (1);
+		return (1);
 	}
 	if (pthread_mutex_init(opt->lock, NULL) != 0)
-    {
-        printf("ft_nmap: Error mutex init failed\n");
-        return (1);
-    }
+	{
+		printf("ft_nmap: Error mutex init failed\n");
+		return (1);
+	}
 	// creates sockets
-	if ((opt->sockets = (t_socket **)malloc(opt->threads * sizeof(t_socket*))) == NULL)
+	if ((opt->sockets = (t_socket **)malloc(opt->threads * sizeof(t_socket *))) == NULL)
 		return (-1);
 
 	// creates results
@@ -75,8 +84,8 @@ static int	nmap_sender(t_opt *opt)
 			return (-1);
 		for (size_t p = 0; p < ft_lstcount(opt->ports); p++)
 		{
-			opt->results[i][p].port = *(int*)tmp_port->content;
-			ft_strcpy(opt->results[i][p].ip, inet_ntoa(((struct sockaddr_in*)tmp_ips->content)->sin_addr));
+			opt->results[i][p].port = *(int *)tmp_port->content;
+			ft_strcpy(opt->results[i][p].ip, inet_ntoa(((struct sockaddr_in *)tmp_ips->content)->sin_addr));
 			ft_bzero(opt->results[i][p].states, 7);
 			tmp_port = tmp_port->next;
 		}
@@ -168,13 +177,13 @@ static int	nmap_sender(t_opt *opt)
 	free(opt->lock);
 	free(opt->sockets);
 	print_results(opt);
-	printf("\n# ft_nmap done -- %ld IP address ( host up) scanned in %.2f seconds\n", ft_lstcount(opt->ips) , \
-		(float)((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)) / 1000000);
+	printf("\n# ft_nmap done -- %ld IP address ( host up) scanned in %.2f seconds\n", ft_lstcount(opt->ips),
+		   (float)((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)) / 1000000);
 	return (0);
 }
 
-int		nmap_wrapper(t_opt *opt)
-{	
+int nmap_wrapper(t_opt *opt)
+{
 	if ((opt->dev = init_ndevice()) == NULL)
 		return (-1);
 	if (getuid() == 0)
@@ -193,5 +202,5 @@ int		nmap_wrapper(t_opt *opt)
 		bad_usage(NULL, -1);
 		return (-1);
 	}
-    return 0;
+	return 0;
 }
