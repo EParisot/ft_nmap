@@ -1,10 +1,10 @@
 #include "../includes/ft_nmap.h"
 
-void    gentcphdr(struct tcphdr *tcph, int32_t port, uint8_t flag)
+void    gentcphdr(struct tcphdr *tcph, int32_t port, uint8_t flag, int32_t dst)
 {
-    tcph->source = htons(port);
+    tcph->source = htons(dst);
 	tcph->dest = htons(port);
-	tcph->seq = 0;
+	tcph->seq = htons(port);
 	tcph->ack_seq = 0;
 	tcph->doff = sizeof(struct tcphdr) / 4;
 	tcph->fin= (flag & T_FIN) ? 1 : 0;
@@ -13,7 +13,7 @@ void    gentcphdr(struct tcphdr *tcph, int32_t port, uint8_t flag)
 	tcph->psh= (flag & T_PUSH) ? 1 : 0;
 	tcph->ack= (flag & T_ACK) ? 1 : 0;
 	tcph->urg= (flag & T_URG) ? 1 : 0;
-	tcph->window = htons(1024);
+	tcph->window = htons(14600);
 	tcph->check = 0; 
 	tcph->urg_ptr = 0;
 }
@@ -28,7 +28,7 @@ void	geniphdr(struct ip *ip, uint8_t *addr, int protocol, int tot_len)
 	ip->ip_tos = 0;
 	ip->ip_len = tot_len;
 	ip->ip_off = 0;
-	ip->ip_ttl = 255;
+	ip->ip_ttl = 50;
 	ip->ip_p = protocol;
 	ip->ip_sum = 0;
 	ip->ip_id = htons(1);
@@ -50,16 +50,16 @@ uint16_t    genpshdr(struct tcphdr *tcph, uint32_t s_addr, uint8_t *local)
     return ret;
 }
 
-void	genudphdr(char **pkt, int port, char *addr, char *host)
+void	genudphdr(char **pkt, int port, char *addr, char *host, int32_t dst)
 {
 	char *datagram = *pkt;
 	struct udphdr*	udph = (struct udphdr *) (datagram + sizeof (struct ip));
 	t_udppsh   psh;
 	char *pseudogram;
 
-	udph->source = htons(port);
+	udph->source = htons(dst);
     udph->dest = htons(port);
-    udph->len = htons(8);
+    udph->len = htons(sizeof(struct udphdr));
     udph->check = 0;
 
 	psh.source_address = inet_addr(host);

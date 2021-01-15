@@ -133,9 +133,9 @@ typedef struct s_udppsh
 # define T_URG 1 << 6
 
 void		geniphdr(struct ip *ip, uint8_t *addr, int protocol, int tot_len);
-void    	gentcphdr(struct tcphdr* tcph, int32_t port, uint8_t flag);
+void    	gentcphdr(struct tcphdr* tcph, int32_t port, uint8_t flag, int32_t dst);
 uint16_t    genpshdr(struct tcphdr *tcph, uint32_t s_addr, uint8_t *local);
-void	genudphdr(char **pkt, int port, char *addr, char *host);
+void	genudphdr(char **pkt, int port, char *addr, char *host, int32_t dst);
 
 /*		errors.c			*/
 void	clean_env(t_opt *opt);
@@ -161,8 +161,8 @@ unsigned short	csum(unsigned short *ptr, int nbytes);
 /****************************/
 
 /*		scan_*.c			*/
-int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag, int z);
-int scanudp(t_opt *opt, int sock, char *addr, int port);
+int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag, int32_t dst);
+int scanudp(t_opt *opt, int sock, char *addr, int port, int32_t dst);
 /****************************/
 
 
