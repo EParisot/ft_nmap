@@ -1,6 +1,0 @@
-# ft_nmap scan initiated as: ./ft_nmap --ip 45.33.32.156 --ports 22 --log logs.txt 
-
-IP(s) : 45.33.32.156
-Ports : 22
-Threads : 1
-Packets types : SYN, NULL, ACK, FIN, XMAS, UDP

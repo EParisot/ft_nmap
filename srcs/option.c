@@ -383,7 +383,7 @@ static void print_summary(t_opt *options)
 	for (int i = 0; i < 6; i++)
 	{
 		((options->scanflag >> (i + 1)) & 1) ? printf(" %s", flagstr[i]) : 0;
-		(i < 5) ? printf(",") : printf("\n");
+		(i < 5) ? printf(",") : printf("\n\n");
 		if (options->logfile)
 		{
 			if ((options->scanflag >> (i + 1)) & 1)
@@ -391,7 +391,7 @@ static void print_summary(t_opt *options)
 				char str[2];
 				sprintf(str, " %s", flagstr[i]);
 				fwrite(str, ft_strlen(str), 1, options->logfile);
-				(i < 5) ? fwrite(",", 1, 1, options->logfile) : fwrite("\n\n", 1, 1, options->logfile);
+				(i < 5) ? fwrite(",", 1, 1, options->logfile) : fwrite("\n\n", 2, 1, options->logfile);
 			}
 		}
 	}
@@ -442,7 +442,6 @@ int nmap_optloop(t_opt *options, int nargs, char *const args[])
 			printf("%s ", args[i]);
 		printf("\n\n");
 		print_summary(options);
-		printf("\n");
 	}
 	return (ret);
 }
