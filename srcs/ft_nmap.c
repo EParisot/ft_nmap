@@ -24,7 +24,7 @@ void sig_handler(int num_sig)
 
 void print_results(t_opt *opt)
 {
-	printf("%u and ports: %u\n", (unsigned int)ft_lstcount(opt->ips), (unsigned int)ft_lstcount(opt->ports));
+	printf("%u ip(s) and %u port(s)\n", (unsigned int)ft_lstcount(opt->ips), (unsigned int)ft_lstcount(opt->ports));
 	for (size_t i = 0; i < ft_lstcount(opt->ips); i++)
 	{
 		printf("ip: %s\n", opt->results[i][0].ip);
@@ -33,7 +33,7 @@ void print_results(t_opt *opt)
 			printf("port : %d -> ", opt->results[i][p].port);
 			for (size_t s = 0; s < 6; ++s)
 			{
-				if (s < 5)
+				if (s)
 					printf(",");
 				if (opt->results[i][p].states[s])
 					printf(" ");
