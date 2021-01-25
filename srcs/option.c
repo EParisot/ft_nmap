@@ -113,13 +113,24 @@ static int read_ports(t_opt *options, char *const args[], int *optind)
 
 static int append_ip(t_opt *options, char *const ip)
 {
+	char *resolved_ip;
 	t_list *new_lst;
 	struct sockaddr_in sa;
 
+	if ((resolved_ip = malloc(INET_ADDRSTRLEN)) == NULL)
+		return (-1);
+	bzero(resolved_ip, INET_ADDRSTRLEN);
+	if (dns_lookup(ip, resolved_ip)) 
+	{
+		free(resolved_ip);
+		return (-1);
+	}
+	ft_strcpy(ip, resolved_ip);
+	free(resolved_ip);
 	if (inet_addr(ip) == INADDR_NONE)
 		return (-1);
 	inet_pton(AF_INET, ip, &sa.sin_addr);
-	if ((new_lst = ft_lstnew(&sa, sizeof(sa))) == NULL)
+	if ((new_lst = ft_lstnew(&sa, sizeof(sa))) == NULL) 
 		return (-1);
 	if (options->ips)
 		ft_lstaddend(&options->ips, new_lst);

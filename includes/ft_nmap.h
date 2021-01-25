@@ -158,6 +158,7 @@ int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, in
 /*		netutils.c			*/
 uint8_t            *getlocalhost(t_opt *opt);
 unsigned short	csum(unsigned short *ptr, int nbytes);
+int dns_lookup(char *address, char *target);
 /****************************/
 
 /*		scan_*.c			*/
