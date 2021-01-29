@@ -80,6 +80,7 @@ static int nmap_sender(t_opt *opt)
 	int proto = IPPROTO_TCP;
 	struct timeval start;
 	struct timeval end;
+	int ip_count = 0;
 	size_t ip_idx = 0;
 	size_t port_idx = 0;
 	size_t scan_idx = 0;
@@ -149,40 +150,44 @@ static int nmap_sender(t_opt *opt)
 			// loop over ip / ports
 			while (tmp_ips && g_stop == false)
 			{
-				port_idx = 0;
-				while (tmp_port && g_stop == false)
+				if (ping_ip((struct sockaddr_in *)(tmp_ips->content)) == 0)
 				{
-					while (g_stop == false)
+					++ip_count;
+					port_idx = 0;
+					while (tmp_port && g_stop == false)
 					{
-						if (opt->sockets[sock_id]->available == 1)
+						while (g_stop == false)
 						{
-							t_thread_arg *args;
-
-							if ((args = (t_thread_arg *)malloc(sizeof(t_thread_arg))) == NULL)
-								return (-1);
-							args->opt = opt;
-							args->sock_id = sock_id;
-							args->ip = (struct sockaddr_in *)(tmp_ips->content);
-							args->port = *(int *)(tmp_port->content);
-							args->scan = scan & opt->scanflag;
-							args->ip_idx = ip_idx;
-							args->port_idx = port_idx;
-							args->scan_idx = scan_idx;
-							opt->sockets[sock_id]->available = 0;
-							if (pthread_create(opt->sockets[sock_id]->thread, NULL, probe, (void *)args))
+							if (opt->sockets[sock_id]->available == 1)
 							{
-								fprintf(stderr, "Error: Thread not created\n");
-								return (-1);
+								t_thread_arg *args;
+
+								if ((args = (t_thread_arg *)malloc(sizeof(t_thread_arg))) == NULL)
+									return (-1);
+								args->opt = opt;
+								args->sock_id = sock_id;
+								args->ip = (struct sockaddr_in *)(tmp_ips->content);
+								args->port = *(int *)(tmp_port->content);
+								args->scan = scan & opt->scanflag;
+								args->ip_idx = ip_idx;
+								args->port_idx = port_idx;
+								args->scan_idx = scan_idx;
+								opt->sockets[sock_id]->available = 0;
+								if (pthread_create(opt->sockets[sock_id]->thread, NULL, probe, (void *)args))
+								{
+									fprintf(stderr, "Error: Thread not created\n");
+									return (-1);
+								}
+								break;
 							}
-							break;
+							if (sock_id == opt->threads - 1)
+								sock_id = 0;
+							else
+								sock_id++;
 						}
-						if (sock_id == opt->threads - 1)
-							sock_id = 0;
-						else
-							sock_id++;
+						tmp_port = tmp_port->next;
+						port_idx++;
 					}
-					tmp_port = tmp_port->next;
-					port_idx++;
 				}
 				tmp_port = opt->ports;
 				tmp_ips = tmp_ips->next;
@@ -205,7 +210,7 @@ static int nmap_sender(t_opt *opt)
 	free(opt->lock);
 	free(opt->sockets);
 	print_results(opt);
-	printf("\n# ft_nmap done -- %ld IP address ( host up) scanned in %.2f seconds\n", ft_lstcount(opt->ips),
+	printf("\n# ft_nmap done -- %ld IP address (%d host(s) up) scanned in %.2f seconds\n", ft_lstcount(opt->ips), ip_count,
 		   (float)((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)) / 1000000);
 	return (0);
 }

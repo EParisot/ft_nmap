@@ -125,6 +125,16 @@ typedef struct s_udppsh
     u_int16_t udp_length;
 }       t_udppsh;
 
+# define PING_PKT_S 64
+# define BUFFER_MAX_SIZE 1024
+# define TTL_VAL 64
+# define PING_TIMEOUT 1
+typedef struct		s_ping_pkt
+{
+	struct icmphdr	header;
+	char			msg[PING_PKT_S - sizeof(struct icmphdr)];
+}					t_ping_pkt;
+
 # define T_FIN 1 << 1
 # define T_SYN 1 << 2
 # define T_RST 1 << 3
@@ -135,42 +145,43 @@ typedef struct s_udppsh
 void		geniphdr(struct ip *ip, uint8_t *addr, int protocol, int tot_len);
 void    	gentcphdr(struct tcphdr* tcph, int32_t port, uint8_t flag, int32_t dst);
 uint16_t    genpshdr(struct tcphdr *tcph, uint32_t s_addr, uint8_t *local);
-void	genudphdr(char **pkt, int port, char *addr, char *host, int32_t dst);
+void		genudphdr(char **pkt, int port, char *addr, char *host, int32_t dst);
 
 /*		errors.c			*/
-void	clean_env(t_opt *opt);
-void	del(void *addr, size_t size);
-int    	bad_usage(const char *arg, int context);						/* Handle error on parsing argument and quit gracefully */
+void		clean_env(t_opt *opt);
+void		del(void *addr, size_t size);
+int    		bad_usage(const char *arg, int context);						/* Handle error on parsing argument and quit gracefully */
 /****************************/
 
 /*		options.c			*/
-int             nmap_optloop(t_opt *options, int nargs, char *const args[]);
+int         nmap_optloop(t_opt *options, int nargs, char *const args[]);
 /****************************/
 
 /*		ft_nmap.c			*/
-int		nmap_wrapper(t_opt *opt);
+int			nmap_wrapper(t_opt *opt);
 /****************************/
 
 /*		packets_forge.c		*/
-int		send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, int sock);
+int			send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, int sock);
 /****************************/
 
 /*		netutils.c			*/
-uint8_t            *getlocalhost(t_opt *opt);
+uint8_t 	*getlocalhost(t_opt *opt);
 unsigned short	csum(unsigned short *ptr, int nbytes);
-int dns_lookup(char *address, char *target);
+int 		dns_lookup(char *address, char *target);
+int 		ping_ip(struct sockaddr_in *ip);
 /****************************/
 
 /*		scan_*.c			*/
-int scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag, int32_t dst);
-int scanudp(t_opt *opt, int sock, char *addr, int port, int32_t dst);
+int 		scantcp(t_opt *opt, int32_t sock, uint8_t *addr, int32_t port, uint8_t flag, int32_t dst);
+int 		scanudp(t_opt *opt, int sock, char *addr, int port, int32_t dst);
 /****************************/
 
 
-int   nmap_pcapsetup(t_opt *opt, int sock_id, char* filter);
-t_device *init_ndevice();
+int   		nmap_pcapsetup(t_opt *opt, int sock_id, char* filter);
+t_device 	*init_ndevice();
 
-void	*probe(void *vargs);
+void		*probe(void *vargs);
 
 
 #endif
