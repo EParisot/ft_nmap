@@ -58,6 +58,8 @@ static int append_range(t_opt *options, char **dash_tab)
 		range.start = range.end;
 		range.end = tmp;
 	}
+	if (range.start == 0)
+		range.start = 1;
 	if (range.start > 0 && range.start <= 65535 &&
 		range.end > 0 && range.end <= 65535)
 	{
@@ -65,7 +67,7 @@ static int append_range(t_opt *options, char **dash_tab)
 		{
 			if ((new_ports_lst = ft_lstnew(&i, sizeof(int))) == NULL)
 				return (-1);
-			if (options->ports)
+			if (options->ports != NULL)
 				ft_lstaddend(&options->ports, new_ports_lst);
 			else
 				options->ports = new_ports_lst;
@@ -314,8 +316,10 @@ static int set_defaults(t_opt *options)
 		return (-1);
 	}
 	if (options->ports == NULL)
+	{
 		if (append_range(options, dft_ports))
 			return (-1);
+	}
 	ft_lstsort(options->ports, ft_cmp);
 	remove_doublons(options->ports);
 	nb_to_scan = ft_lstcount(options->ips) * ft_lstcount(options->ports);

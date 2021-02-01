@@ -22,12 +22,13 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 	switch (iphdr->ip_p)
 	{
 		case IPPROTO_TCP:
-			result->states[((t_probe_arg*)args)->scan_idx] = tcphdr->th_flags & TH_URG ? 'U'
-				: tcphdr->th_flags & TH_SYN ? 'a'
-				: tcphdr->th_flags & TH_PUSH ? 'P'
-				: tcphdr->th_flags & TH_RST ? 'R'
-				: tcphdr->th_flags & TH_ACK ? 'S'
-				: tcphdr->th_flags & TH_FIN ? 'F'
+			result->states[((t_probe_arg*)args)->scan_idx] = \
+				tcphdr->th_flags & TH_URG ? 'U' \
+				: tcphdr->th_flags & TH_SYN ? 'a' \
+				: tcphdr->th_flags & TH_PUSH ? 'P' \
+				: tcphdr->th_flags & TH_RST ? 'R' \
+				: tcphdr->th_flags & TH_ACK ? 'S' \
+				: tcphdr->th_flags & TH_FIN ? 'F' \
 				: '*';
 			break;
 
