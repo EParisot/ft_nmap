@@ -148,7 +148,7 @@ static int	wait_response(t_thread_arg *targs)
 	ft_strcat(str_filter, str_port);
 	free(str_port);
 	ft_strcat(str_filter, " and dst port 32323");
-	printf("%s\n", str_filter);
+	//printf("%s\n", str_filter);
 
 	if (nmap_pcapsetup(targs->opt, targs->sock_id, str_filter) == -1)
 		return (-1);

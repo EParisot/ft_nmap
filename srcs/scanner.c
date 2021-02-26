@@ -23,14 +23,14 @@ int send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, int
 	switch ((char)scan)
 	{
 	case (1 << (1)):
-		scantcp(opt, sock, str_addr, port, T_SYN, 55444);
+		scantcp(opt, sock, str_addr, port, T_SYN, 32323);
 		break;
 	case (1 << (2)):
 		scantcp(opt, sock, str_addr, port, 0, 55444);
 		scantcp(opt, sock, str_addr, port, 0, 32323);
 		break;
 	case (1 << (3)):
-		scantcp(opt, sock, str_addr, port, T_ACK, 55444);
+		scantcp(opt, sock, str_addr, port, T_ACK, 32323);
 		break;
 	case (1 << (4)):
 		scantcp(opt, sock, str_addr, port, T_FIN, 55444);
@@ -41,7 +41,7 @@ int send_probe(t_opt *opt, struct sockaddr_in *addr, int port, uint8_t scan, int
 		scantcp(opt, sock, str_addr, port, T_FIN | T_PUSH | T_URG, 32323);
 		break;
 	case (1 << (6)):
-		scanudp(opt, sock, (char *)str_addr, port, 55444);
+		scanudp(opt, sock, (char *)str_addr, port, 32323);
 		break;
 	default:
 		printf("already scanned all\n");
