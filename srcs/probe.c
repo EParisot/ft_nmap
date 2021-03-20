@@ -133,7 +133,7 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 
 static int	wait_response(t_thread_arg *targs)
 {
-	char			str_filter[64];
+	char			str_filter[256];
 	t_probe_arg		*args;
 	//int				str_len = 64;
 	//char			str[str_len];
@@ -142,7 +142,7 @@ static int	wait_response(t_thread_arg *targs)
 	t_result		*result;
 	int				ret = 0;
 
-	ft_bzero(str_filter, 64);
+	ft_bzero(str_filter, 256);
 	ft_strcat(str_filter, "tcp or udp and dst ");
 	ft_strcat(str_filter, (char*)targs->opt->localhost);
 	ft_strcat(str_filter, " and src port ");
