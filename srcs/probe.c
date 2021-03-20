@@ -8,6 +8,7 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 
 	const struct ip* iphdr;
 	const struct tcphdr* tcphdr;
+	const struct icmp* icmp;
 	//char iphi[256], srcip[256], dstip[256];
 	(void)header;
 
@@ -18,6 +19,7 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 
 	packet += 4*iphdr->ip_hl;
 	tcphdr = (struct tcphdr*)packet;
+	icmp = (struct icmp*)packet;
 	pthread_mutex_lock(((t_probe_arg*)args)->lock);
 	switch (iphdr->ip_p)
 	{
@@ -37,7 +39,7 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 			break;
 
 		case IPPROTO_ICMP:
-			result->states[((t_probe_arg*)args)->scan_idx] = 'i';
+			result->states[((t_probe_arg*)args)->scan_idx] = (icmp->icmp_type == 3) ? 'e' : 'i';
 			break;
 
 		default:

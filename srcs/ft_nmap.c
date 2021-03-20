@@ -22,24 +22,8 @@ void sig_handler(int num_sig)
 	return;
 }
 
-int is_open(char *states)
-{
-	for (int i = 0; i < 7; ++i)
-	{
-		if (states[i])
-		{
-			if ((i == 2 && states[i] != 'T') || (i != 2 && states[i] != 'R' && states[i] != 'T'))
-			{
-				return (1);
-			}
-		}
-	}
-	return (0);
-}
-
 void print_results(t_opt *opt)
 {
-	int closed = 0;
 	printf("%u ip(s) and %u port(s)\n", (unsigned int)ft_lstcount(opt->ips), (unsigned int)ft_lstcount(opt->ports));
 	if (opt->logfile)
 	{
@@ -49,7 +33,6 @@ void print_results(t_opt *opt)
 	}
 	for (size_t i = 0; i < ft_lstcount(opt->ips); i++)
 	{
-		closed = 0;
 		printf("ip: %s\n", opt->results[i][0].ip);
 		if (opt->logfile)
 		{
@@ -59,8 +42,6 @@ void print_results(t_opt *opt)
 		}
 		for (size_t p = 0; p < ft_lstcount(opt->ports); p++)
 		{
-			if (is_open(opt->results[i][p].states)) 
-			{
 				printf("port : %d -> ", opt->results[i][p].port);
 				if (opt->logfile)
 				{
@@ -70,38 +51,20 @@ void print_results(t_opt *opt)
 				}
 				for (size_t s = 0; s < 6; ++s)
 				{
-					if (s)
+					if (opt->scanflag & (1 << (s+1)))
 					{
-						printf(",");
-						if (opt->logfile)
-							fwrite(",", 1, 1, opt->logfile);
-					}
-					printf(" %c", opt->results[i][p].states[s]);
-					if (opt->logfile)
-					{
-						char str[3];
-						sprintf(str, " %c", opt->results[i][p].states[s]);
-						fwrite(str, 1, ft_strlen(str), opt->logfile);
+						if (s == 0)
+							printf("SYN(%s), ", opt->results[i][p].states[s] == 'a' ? "open" : opt->results[i][p].states[s] == 'T' ? "filtered" : "closed");
+						else if (s == 1 || s == 3 || s == 4)
+							printf("%s(%s), ", s == 1 ? "NULL" : s == 3 ? "FIN" : "XMAS",\
+							opt->results[i][p].states[s] == 'R' ? "closed" : opt->results[i][p].states[s] == 'e' ? "filtered" : "open|filtered");
+						else if (s == 2)
+							printf("ACK(%s), ", opt->results[i][p].states[s] == 'R' ? "unfiltered" : "filtered");
+						else
+							printf("UDP(%s)", opt->results[i][p].states[s] == 'i' ? "filtered" : opt->results[i][p].states[s] == 'u' ? "open" : "closed");
 					}
 				}
 				printf("\n");
-				if (opt->logfile)
-					fwrite("\n", 1, 1, opt->logfile);
-			}
-			else
-			{
-				++closed;
-			}
-		}
-		if (closed)
-		{
-			printf("Not shown: %d closed ports\n", closed);
-			if (opt->logfile)
-			{
-				char str[32];
-				sprintf(str, "Not shown: %d closed ports\n", closed);
-				fwrite(str, 1, ft_strlen(str), opt->logfile);
-			}
 		}
 	}
 }
