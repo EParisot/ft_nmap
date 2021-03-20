@@ -186,7 +186,13 @@ static int nmap_sender(t_opt *opt)
 								break;
 							}
 							if (sock_id == opt->threads - 1)
+							{
+								pthread_join(*(opt->sockets[0]->thread), NULL);
+								free(opt->sockets[0]->thread);
+								if ((opt->sockets[0]->thread = (pthread_t *)malloc(sizeof(pthread_t))) == NULL)
+									return (-1);
 								sock_id = 0;
+							}
 							else
 								sock_id++;
 						}
@@ -198,10 +204,9 @@ static int nmap_sender(t_opt *opt)
 				tmp_ips = tmp_ips->next;
 				ip_idx++;
 			}
-			// clean sockets
+			// clean threads and sockets
 			for (int i = 0; i < opt->threads; i++)
 			{
-				//printf("Wait threads end\n");
 				pthread_join(*(opt->sockets[i]->thread), NULL);
 				free(opt->sockets[i]->thread);
 				close(opt->sockets[i]->sock_fd);
