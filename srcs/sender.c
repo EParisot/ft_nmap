@@ -62,6 +62,5 @@ int scanudp(t_opt *opt, int sock, char *addr, int port, int32_t dst)
         printf ("Error sending udp packet.\n");
         return -1;
     }
-    //pthread_mutex_unlock(opt->lock);
     return 1;
 }

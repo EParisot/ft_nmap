@@ -25,53 +25,54 @@ void sig_handler(int num_sig)
 void print_results(t_opt *opt)
 {
 	struct servent *service;
+	int str_len = 256;
+	char str[str_len];
 
-	printf("%u ip(s) and %u port(s)\n", (unsigned int)ft_lstcount(opt->ips), (unsigned int)ft_lstcount(opt->ports));
+	ft_bzero(str, str_len);
+	sprintf(str, "%u ip(s) and %u port(s)\n", (unsigned int)ft_lstcount(opt->ips), (unsigned int)ft_lstcount(opt->ports));
+	write(1, str, ft_strlen(str));
 	if (opt->logfile)
-	{
-		char str[30];
-		sprintf(str, "%u ip(s) and %u port(s)\n", (unsigned int)ft_lstcount(opt->ips), (unsigned int)ft_lstcount(opt->ports));
 		fwrite(str, ft_strlen(str), 1, opt->logfile);
-	}
 	for (size_t i = 0; i < ft_lstcount(opt->ips); i++)
 	{
-		printf("PORT\tSERVICE NAME\tRESULT\n------------------------------------------------------------------\n");
+		ft_bzero(str, str_len);
+		sprintf(str, "ip: %s\nPORT\tSERVICE NAME\tRESULT\n------------------------------------------------------------------\n", opt->results[i][0].ip);
+		write(1, str, ft_strlen(str));
 		if (opt->logfile)
-		{
-			char str[93];
-			sprintf(str, "ip: %s\n", opt->results[i][0].ip);
-			sprintf(str, "PORT\tSERVICE NAME\tRESULT\n------------------------------------------------------------------\n");
 			fwrite(str, ft_strlen(str), 1, opt->logfile);
-		}
 		for (size_t p = 0; p < ft_lstcount(opt->ports); p++)
 		{
 			service = getservbyport(htons(opt->results[i][p].port), NULL);
+			ft_bzero(str, str_len);
 			if (service)
-				printf("%5d\t%-16s\t", opt->results[i][p].port, service->s_name);
+				sprintf(str, "%5d\t%-16s\t", opt->results[i][p].port, service->s_name);
 			else
-				printf("%5d\t%-16s\t", opt->results[i][p].port, "(null)");
+				sprintf(str, "%5d\t%-16s\t", opt->results[i][p].port, "(null)");
+			write(1, str, ft_strlen(str));
 			if (opt->logfile)
-			{
-				char str[15];
-				sprintf(str, "%5d\t", opt->results[i][p].port);
 				fwrite(str, ft_strlen(str), 1, opt->logfile);
-			}
 			for (size_t s = 0; s < 6; ++s)
 			{
 				if (opt->scanflag & (1 << (s+1)))
 				{
+					ft_bzero(str, str_len);
 					if (s == 0)
-						printf("SYN(%s) ", opt->results[i][p].states[s] == 'a' ? "open" : opt->results[i][p].states[s] == 'T' ? "filtered" : "closed");
+						sprintf(str, "SYN(%s) ", opt->results[i][p].states[s] == 'a' ? "open" : opt->results[i][p].states[s] == 'T' ? "filtered" : "closed");
 					else if (s == 1 || s == 3 || s == 4)
-						printf("%s(%s) ", s == 1 ? "NULL" : s == 3 ? "FIN" : "XMAS",\
+						sprintf(str, "%s(%s) ", s == 1 ? "NULL" : s == 3 ? "FIN" : "XMAS",\
 						opt->results[i][p].states[s] == 'R' ? "closed" : opt->results[i][p].states[s] == 'e' ? "filtered" : "open|filtered");
 					else if (s == 2)
-						printf("ACK(%s) ", opt->results[i][p].states[s] == 'R' ? "unfiltered" : "filtered");
+						sprintf(str, "ACK(%s) ", opt->results[i][p].states[s] == 'R' ? "unfiltered" : "filtered");
 					else
-						printf("UDP(%s)", opt->results[i][p].states[s] == 'i' ? "filtered" : opt->results[i][p].states[s] == 'u' ? "open" : "closed");
+						sprintf(str, "UDP(%s)", opt->results[i][p].states[s] == 'i' ? "filtered" : opt->results[i][p].states[s] == 'u' ? "open" : "closed");
+					write(1, str, ft_strlen(str));
+					if (opt->logfile)
+						fwrite(str, ft_strlen(str), 1, opt->logfile);
 				}
 			}
 			printf("\n");
+			if (opt->logfile)
+				fwrite("\n", 1, 1, opt->logfile);
 		}
 	}
 }

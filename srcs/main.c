@@ -41,8 +41,7 @@ int		main(int ac, char **av)
 		ret = nmap_optloop(opt, ac, av); // will return -1 if bad argument for option
 		if (ret == 0)
 		{
-	    	ret = nmap_wrapper(opt);
-			//printf("Device: %s\n", opt->dev->device);
+			ret = nmap_wrapper(opt);
 		}
 	}
 	clean_env(opt);
