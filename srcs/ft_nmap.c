@@ -51,7 +51,7 @@ void print_results(t_opt *opt)
 			write(1, str, ft_strlen(str));
 			if (opt->logfile)
 				fwrite(str, ft_strlen(str), 1, opt->logfile);
-			for (size_t s = 0; s < 6; ++s)
+			for (size_t s = 0; s < 7; s++)
 			{
 				if (opt->scanflag & (1 << (s+1)))
 				{
