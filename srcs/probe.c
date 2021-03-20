@@ -47,7 +47,7 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 			break;
 	}
 	pthread_mutex_unlock(((t_probe_arg*)args)->lock);
-	printf("%s %d\n", result->ip, result->port);
+	//printf("%s %d\n", result->ip, result->port);
 
 	// OLD VERSION
 	
@@ -151,11 +151,9 @@ static int	wait_response(t_thread_arg *targs)
 	free(str_port);
 	ft_strcat(str_filter, " and dst port 32323 or icmp and dst ");
 	ft_strcat(str_filter, (char*)targs->opt->localhost);
-	printf("%s\n", str_filter);
 
 	if (nmap_pcapsetup(targs->opt, targs->sock_id, str_filter) == -1)
-	{ printf("error\n");
-		return (-1);}
+		return (-1);
 	send_probe(targs->opt, targs->ip, targs->port, targs->scan, targs->opt->sockets[targs->sock_id]->sock_fd);
 	if ((args = (t_probe_arg*)malloc(sizeof(t_probe_arg))) == NULL)
 	{

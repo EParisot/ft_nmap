@@ -37,6 +37,7 @@
 # include <signal.h>
 # include<string.h>
 # include<sys/socket.h>
+# include <netdb.h>
 
 extern bool g_stop;
 
