@@ -38,7 +38,7 @@
 # include<string.h>
 # include<sys/socket.h>
 
-bool g_stop;
+extern bool g_stop;
 
 typedef struct          s_device
 {

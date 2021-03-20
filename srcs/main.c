@@ -11,7 +11,7 @@
 /* ************************************************************************** */
 
 #include "../includes/ft_nmap.h"
-
+bool g_stop;
 int		main(int ac, char **av)
 {
 	t_opt	*opt;

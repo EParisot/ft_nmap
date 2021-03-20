@@ -45,7 +45,7 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 			break;
 	}
 	pthread_mutex_unlock(((t_probe_arg*)args)->lock);
-	//printf("%s %d\n", result->ip, result->port);
+	printf("%s %d\n", result->ip, result->port);
 
 	// OLD VERSION
 	
@@ -141,17 +141,20 @@ static int	wait_response(t_thread_arg *targs)
 	int				ret = 0;
 
 	ft_bzero(str_filter, 64);
-	ft_strcat(str_filter, "dst host ");
+	ft_strcat(str_filter, "tcp or udp and dst ");
 	ft_strcat(str_filter, (char*)targs->opt->localhost);
 	ft_strcat(str_filter, " and src port ");
 	char *str_port = ft_itoa(targs->port);
 	ft_strcat(str_filter, str_port);
 	free(str_port);
-	ft_strcat(str_filter, " and dst port 32323");
-	//printf("%s\n", str_filter);
+	ft_strcat(str_filter, " and dst port 32323 or icmp and dst ");
+	ft_strcat(str_filter, (char*)targs->opt->localhost);
+	printf("%s\n", str_filter);
 
 	if (nmap_pcapsetup(targs->opt, targs->sock_id, str_filter) == -1)
-		return (-1);
+	{ printf("error\n");
+		return (-1);}
+	send_probe(targs->opt, targs->ip, targs->port, targs->scan, targs->opt->sockets[targs->sock_id]->sock_fd);
 	if ((args = (t_probe_arg*)malloc(sizeof(t_probe_arg))) == NULL)
 	{
 		printf("ft_nmap: Error probe failed malloc\n");
@@ -179,6 +182,7 @@ static int	wait_response(t_thread_arg *targs)
 			break;
 		}
 	}
+	pcap_setnonblock(targs->opt->sockets[targs->sock_id]->handle, 0, NULL);
 	free(args);
 	return (0);
 }
@@ -186,11 +190,12 @@ static int	wait_response(t_thread_arg *targs)
 void	*probe(void *vargs)
 {
 	t_thread_arg *args = (t_thread_arg *)vargs;
-	send_probe(args->opt, args->ip, args->port, args->scan, args->opt->sockets[args->sock_id]->sock_fd);
 	wait_response(args);
 	args->opt->sockets[args->sock_id]->available = 1;
+	pthread_mutex_lock(args->opt->lock);
 	pcap_close(args->opt->sockets[args->sock_id]->handle);
 	pcap_freecode(&(args->opt->sockets[args->sock_id]->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
+	pthread_mutex_unlock(args->opt->lock);
 	free(args);
 	return (NULL);
 }

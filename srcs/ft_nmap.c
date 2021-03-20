@@ -28,7 +28,7 @@ int is_open(char *states)
 	{
 		if (states[i])
 		{
-			if (states[i] != 'R' && states[i] != 'T')
+			if ((i == 2 && states[i] != 'T') || (i != 2 && states[i] != 'R' && states[i] != 'T'))
 			{
 				return (1);
 			}
