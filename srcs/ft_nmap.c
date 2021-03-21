@@ -22,7 +22,7 @@ void sig_handler(int num_sig)
 	return;
 }
 
-void print_results(t_opt *opt)
+void print_results(t_opt *opt, int ip_count, struct timeval start, struct timeval end)
 {
 	struct servent *service;
 	const int str_len = 256;
@@ -103,9 +103,11 @@ void print_results(t_opt *opt)
 			}
 			if (printed)
 			{
-				printf("\n");
+				ft_bzero(str, str_len);
+				sprintf(str, "\n");
+				write(1, str, ft_strlen(str));
 				if (opt->logfile)
-					fwrite("\n", 1, 1, opt->logfile);
+					fwrite(str, ft_strlen(str), 1, opt->logfile);
 			} else {
 				closed++;
 			}
@@ -116,6 +118,12 @@ void print_results(t_opt *opt)
 		if (opt->logfile)
 			fwrite(str, ft_strlen(str), 1, opt->logfile);
 	}
+	ft_bzero(str, str_len);
+	sprintf(str, "\n# ft_nmap done -- %ld IP address (%d host(s) up) scanned in %.2f seconds\n", ft_lstcount(opt->ips), ip_count,
+		   (float)((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)) / 1000000);
+	write(1, str, ft_strlen(str));
+	if (opt->logfile)
+		fwrite(str, ft_strlen(str), 1, opt->logfile);
 }
 
 static int nmap_sender(t_opt *opt)
@@ -266,9 +274,7 @@ static int nmap_sender(t_opt *opt)
 	pthread_mutex_destroy(opt->lock);
 	free(opt->lock);
 	free(opt->sockets);
-	print_results(opt);
-	printf("\n# ft_nmap done -- %ld IP address (%d host(s) up) scanned in %.2f seconds\n", ft_lstcount(opt->ips), ip_count,
-		   (float)((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)) / 1000000);
+	print_results(opt, ip_count, start, end);
 	return (0);
 }
 

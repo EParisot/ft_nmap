@@ -251,7 +251,7 @@ static int read_scantypes(t_opt *options, char *const args[], int *optind)
 	return (0);
 }
 
-static int fread_logfile(t_opt *options, int nargs, char *const args[], int *optind)
+static int fread_logfile(t_opt *options, char *const args[], int *optind)
 {
 	FILE *fp;
 	int ret;
@@ -262,14 +262,6 @@ static int fread_logfile(t_opt *options, int nargs, char *const args[], int *opt
 	if ((fp = fopen(args[*optind + 1], "w")) == NULL)
 		return (retmsg("ft_nmap: error: cannot create %s file\n", "--log", -1));
 	options->logfile = fp;
-	fwrite("# ft_nmap scan initiated as: ", 29, 1, options->logfile);
-	for (int i = 0; i < nargs; i++)
-	{
-		fwrite(args[i], ft_strlen(args[i]), 1, options->logfile);
-		fwrite(" ", 1, 1, options->logfile);
-	}
-	fwrite("\n\n", 2, 1, options->logfile);
-
 	(*optind)++;
 	return (ret);
 }
@@ -347,79 +339,80 @@ static void print_summary(t_opt *options)
 	t_list *tmp_ranges = options->ranges;
 	t_list *tmp_ips = options->ips;
 	char *flagstr[7] = {"SYN", "NULL", "ACK", "FIN", "XMAS", "UDP", 0};
+	const int str_len = 64;
+	char str[str_len];
 
-	printf("IP(s) :");
+	ft_bzero(str, str_len);
+	sprintf(str, "IP(s) :");
+	write(1, str, ft_strlen(str));
 	if (options->logfile)
-		fwrite("IP(s) :", 7, 1, options->logfile);
+		fwrite(str, ft_strlen(str), 1, options->logfile);
 	while (tmp_ips)
 	{
-		printf(" %s", inet_ntoa(((struct sockaddr_in *)tmp_ips->content)->sin_addr));
+		ft_bzero(str, str_len);
+		sprintf(str, " %s", inet_ntoa(((struct sockaddr_in *)tmp_ips->content)->sin_addr));
+		write(1, str, ft_strlen(str));
 		if (options->logfile)
-		{
-			char str[16];
-			sprintf(str, " %s", inet_ntoa(((struct sockaddr_in *)tmp_ips->content)->sin_addr));
 			fwrite(str, ft_strlen(str), 1, options->logfile);
-		}
 		tmp_ips = tmp_ips->next;
-		(tmp_ips) ? printf(",") : printf("\n");
+		ft_bzero(str, str_len);
+		(tmp_ips) ? sprintf(str, ",") : sprintf(str, "\n");
+		write(1, str, ft_strlen(str));
 		if (options->logfile)
-			(tmp_ips) ? fwrite(",", 1, 1, options->logfile) : fwrite("\n", 1, 1, options->logfile);
+			fwrite(str, ft_strlen(str), 1, options->logfile);
 	}
-	printf("Ports : ");
+	ft_bzero(str, str_len);
+	sprintf(str, "Ports : ");
+	write(1, str, ft_strlen(str));
 	if (options->logfile)
-		fwrite("Ports : ", 8, 1, options->logfile);
+		fwrite(str, ft_strlen(str), 1, options->logfile);
 	while (tmp_ranges)
 	{
 		if (((t_range *)(tmp_ranges->content))->end > ((t_range *)(tmp_ranges->content))->start)
 		{
-			printf("%d-%d", ((t_range *)(tmp_ranges->content))->start, ((t_range *)(tmp_ranges->content))->end);
+			ft_bzero(str, str_len);
+			sprintf(str, "%d-%d", ((t_range *)(tmp_ranges->content))->start, ((t_range *)(tmp_ranges->content))->end);
+			write(1, str, ft_strlen(str));
 			if (options->logfile)
-			{
-				char str[11];
-				sprintf(str, "%d-%d", ((t_range *)(tmp_ranges->content))->start, ((t_range *)(tmp_ranges->content))->end);
 				fwrite(str, ft_strlen(str), 1, options->logfile);
-			}
 		}
 		else
 		{
-			printf("%d", ((t_range *)(tmp_ranges->content))->start);
+			ft_bzero(str, str_len);
+			sprintf(str, "%d", ((t_range *)(tmp_ranges->content))->start);
+			write(1, str, ft_strlen(str));
 			if (options->logfile)
-			{
-				char str[11];
-				sprintf(str, "%d", ((t_range *)(tmp_ranges->content))->start);
 				fwrite(str, ft_strlen(str), 1, options->logfile);
-			}
 		}
 		tmp_ranges = tmp_ranges->next;
-		(tmp_ranges) ? printf(",") : printf("\n");
+		ft_bzero(str, str_len);
+		(tmp_ranges) ? sprintf(str, ",") : sprintf(str, "\n");
+		write(1, str, ft_strlen(str));
 		if (options->logfile)
-		{
-			(tmp_ranges) ? fwrite(",", 1, 1, options->logfile) : fwrite("\n", 1, 1, options->logfile);
-		}
+			fwrite(str, ft_strlen(str), 1, options->logfile);
 	}
-	printf("Threads : %d\n", options->threads);
-	printf("Packets types :");
+	ft_bzero(str, str_len);
+	sprintf(str, "Threads : %d\n", options->threads);
+	write(1, str, ft_strlen(str));
 	if (options->logfile)
-	{
-		char str[15];
-		sprintf(str, "Threads : %d\n", options->threads);
 		fwrite(str, ft_strlen(str), 1, options->logfile);
-		fwrite("Packets types :", 15, 1, options->logfile);
-	}
+	ft_bzero(str, str_len);
+	sprintf(str, "Packets types :");
+	write(1, str, ft_strlen(str));
+	if (options->logfile)
+		fwrite(str, ft_strlen(str), 1, options->logfile);
 	for (int i = 0; i < 6; i++)
 	{
-		((options->scanflag >> (i + 1)) & 1) ? printf(" %s", flagstr[i]) : 0;
-		(i < 5) ? printf(",") : printf("\n\n");
+		ft_bzero(str, str_len);
+		((options->scanflag >> (i + 1)) & 1) ? sprintf(str, " %s", flagstr[i]) : 0;
+		write(1, str, ft_strlen(str));
 		if (options->logfile)
-		{
-			if ((options->scanflag >> (i + 1)) & 1)
-			{
-				char str[2];
-				sprintf(str, " %s", flagstr[i]);
-				fwrite(str, ft_strlen(str), 1, options->logfile);
-				(i < 5) ? fwrite(",", 1, 1, options->logfile) : fwrite("\n\n", 2, 1, options->logfile);
-			}
-		}
+			fwrite(str, ft_strlen(str), 1, options->logfile);
+		ft_bzero(str, str_len);
+		(i < 5) ? sprintf(str, ",") : sprintf(str, "\n\n");
+		write(1, str, ft_strlen(str));
+		if (options->logfile)
+			fwrite(str, ft_strlen(str), 1, options->logfile);
 	}
 }
 
@@ -452,7 +445,7 @@ int nmap_optloop(t_opt *options, int nargs, char *const args[])
 			ret = read_scantypes(options, args, &optind);
 			break;
 		case 'l':
-			ret = fread_logfile(options, nargs, args, &optind);
+			ret = fread_logfile(options, args, &optind);
 			break;
 			if (ret)
 				return (-1);
@@ -463,10 +456,26 @@ int nmap_optloop(t_opt *options, int nargs, char *const args[])
 		return (-1);
 	if (ret != -1)
 	{
-		printf("# ft_nmap scan initiated as: ");
+		const int str_len = 256;
+		char str[str_len];
+		ft_bzero(str, str_len);
+		sprintf(str, "# ft_nmap scan initiated as: ");
+		write(1, str, ft_strlen(str));
+		if (options->logfile)
+			fwrite(str, ft_strlen(str), 1, options->logfile);
 		for (int i = 0; i < nargs; ++i)
-			printf("%s ", args[i]);
-		printf("\n\n");
+		{
+			ft_bzero(str, str_len);
+			sprintf(str, "%s ", args[i]);
+			write(1, str, ft_strlen(str));
+			if (options->logfile)
+				fwrite(str, ft_strlen(str), 1, options->logfile);
+		}
+		ft_bzero(str, str_len);
+		sprintf(str, "\n\n");
+		write(1, str, ft_strlen(str));
+		if (options->logfile)
+			fwrite(str, ft_strlen(str), 1, options->logfile);
 		print_summary(options);
 	}
 	return (ret);
