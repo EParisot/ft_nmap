@@ -160,6 +160,7 @@ static int nmap_sender(t_opt *opt)
 				opt->sockets[i]->available = 1;
 				if ((opt->sockets[i]->thread = (pthread_t *)malloc(sizeof(pthread_t))) == NULL)
 					return (-1);
+				ft_bzero(opt->sockets[i]->thread, sizeof(pthread_t));
 			}
 			// loop over ip / ports
 			while (tmp_ips && g_stop == false)
