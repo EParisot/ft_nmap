@@ -76,7 +76,7 @@ void print_results(t_opt *opt, int ip_count, struct timeval start, struct timeva
 					else if (s == 2)
 					{
 						sprintf(str, "ACK(%s) ", opt->results[i][p].states[s] == 'R' ? "unfiltered" : "filtered");
-						if (opt->results[i][p].states[s] != 'R')
+						if (opt->results[i][p].states[s] == 'R')
 							to_print = true;
 					}
 					else
