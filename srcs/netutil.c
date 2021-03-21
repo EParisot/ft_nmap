@@ -163,30 +163,6 @@ t_ping_pkt	*build_pkt()
 	return (pkt);
 }
 
-struct msghdr *build_msg(struct sockaddr *addr_struct)
-{
-	struct msghdr	*msg;
-	struct iovec	*iov;
-	char			*buffer;
-
-	if ((msg = (struct msghdr *)malloc(sizeof(struct msghdr))) == NULL)
-		return (NULL);
-	if ((iov = (struct iovec *)malloc(sizeof(struct iovec))) == NULL)
-		return (NULL);
-	if ((buffer = malloc(BUFFER_MAX_SIZE)) == NULL)
-		return (NULL);
-	ft_memset(msg, 0, sizeof(struct msghdr));
-	ft_memset(iov, 0, sizeof(struct iovec));
-	ft_memset(buffer, 0, BUFFER_MAX_SIZE);
-	iov->iov_base = buffer;
-	iov->iov_len = BUFFER_MAX_SIZE;
-	msg->msg_iov = iov;
-	msg->msg_iovlen = 1;
-	msg->msg_name = addr_struct;
-	msg->msg_namelen = sizeof(struct sockaddr);
-	return (msg);
-}
-
 int ping_ip(struct sockaddr_in *ip) 
 {
 	t_ping_pkt	*pkt;
@@ -211,12 +187,11 @@ int ping_ip(struct sockaddr_in *ip)
 		close(ping_socket);
 		return (-1);
 	}
-	struct msghdr *msg = build_msg((struct sockaddr *)ip);
-	int received_size = recvmsg(ping_socket, msg, 0);
+	char buf[BUFFER_MAX_SIZE];
+	socklen_t socklen = sizeof(struct sockaddr);
+	ft_bzero(buf, BUFFER_MAX_SIZE);
+	int received_size = recvfrom(ping_socket, buf, BUFFER_MAX_SIZE, 0, (struct sockaddr *)ip, &socklen);
 	free(pkt);
-	free(msg->msg_iov->iov_base);
-	free(msg->msg_iov);
-	free(msg);
 	close(ping_socket);
 	if (received_size == 0)
 		return (-1);
