@@ -27,6 +27,10 @@ void print_results(t_opt *opt)
 	struct servent *service;
 	const int str_len = 256;
 	char str[str_len];
+	char str2[str_len];
+	bool to_print = false;
+	bool printed = false;
+	int closed = 0;
 
 	ft_bzero(str, str_len);
 	sprintf(str, "%u ip(s) and %u port(s)\n", (unsigned int)ft_lstcount(opt->ips), (unsigned int)ft_lstcount(opt->ports));
@@ -35,45 +39,82 @@ void print_results(t_opt *opt)
 		fwrite(str, ft_strlen(str), 1, opt->logfile);
 	for (size_t i = 0; i < ft_lstcount(opt->ips); i++)
 	{
+		closed = 0;
 		ft_bzero(str, str_len);
-		sprintf(str, "ip: %s\nPORT\tSERVICE NAME\tRESULT\n------------------------------------------------------------------\n", opt->results[i][0].ip);
+		sprintf(str, "\nip: %s\nPORT\tSERVICE NAME\tRESULT\n------------------------------------------------------------------\n", opt->results[i][0].ip);
 		write(1, str, ft_strlen(str));
 		if (opt->logfile)
 			fwrite(str, ft_strlen(str), 1, opt->logfile);
 		for (size_t p = 0; p < ft_lstcount(opt->ports); p++)
 		{
 			service = getservbyport(htons(opt->results[i][p].port), NULL);
-			ft_bzero(str, str_len);
+			ft_bzero(str2, str_len);
 			if (service)
-				sprintf(str, "%5d\t%-16s\t", opt->results[i][p].port, service->s_name);
+				sprintf(str2, "%5d\t%-16s\t", opt->results[i][p].port, service->s_name);
 			else
-				sprintf(str, "%5d\t%-16s\t", opt->results[i][p].port, "(null)");
-			write(1, str, ft_strlen(str));
-			if (opt->logfile)
-				fwrite(str, ft_strlen(str), 1, opt->logfile);
+				sprintf(str2, "%5d\t%-16s\t", opt->results[i][p].port, "(null)");
+			printed = false;
 			for (size_t s = 0; s < 6; s++)
 			{
 				if (opt->scanflag & (1 << (s+1)))
 				{
+					to_print = false;
 					ft_bzero(str, str_len);
 					if (s == 0)
+					{
 						sprintf(str, "SYN(%s) ", opt->results[i][p].states[s] == 'a' ? "open" : opt->results[i][p].states[s] == 'T' ? "filtered" : "closed");
+						if (opt->results[i][p].states[s] == 'a')
+							to_print = true;
+					}
 					else if (s == 1 || s == 3 || s == 4)
+					{
 						sprintf(str, "%s(%s) ", s == 1 ? "NULL" : s == 3 ? "FIN" : "XMAS",\
 						opt->results[i][p].states[s] == 'R' ? "closed" : opt->results[i][p].states[s] == 'e' ? "filtered" : "open|filtered");
+						if (opt->results[i][p].states[s] != 'R')
+							to_print = true;
+					}
 					else if (s == 2)
+					{
 						sprintf(str, "ACK(%s) ", opt->results[i][p].states[s] == 'R' ? "unfiltered" : "filtered");
+						if (opt->results[i][p].states[s] != 'R')
+							to_print = true;
+					}
 					else
+					{
 						sprintf(str, "UDP(%s)", opt->results[i][p].states[s] == 'i' ? "filtered" : opt->results[i][p].states[s] == 'u' ? "open" : "closed");
-					write(1, str, ft_strlen(str));
-					if (opt->logfile)
-						fwrite(str, ft_strlen(str), 1, opt->logfile);
+						if (opt->results[i][p].states[s] == 'u' || opt->results[i][p].states[s] == 'i')
+							to_print = true;
+					}
+					if (to_print)
+					{
+						if (!printed)
+						{
+							write(1, str2, ft_strlen(str2));
+							if (opt->logfile)
+								fwrite(str2, ft_strlen(str2), 1, opt->logfile);
+							printed = true;
+						}
+						write(1, str, ft_strlen(str));
+						if (opt->logfile)
+							fwrite(str, ft_strlen(str), 1, opt->logfile);
+					}
+					to_print = false;
 				}
 			}
-			printf("\n");
-			if (opt->logfile)
-				fwrite("\n", 1, 1, opt->logfile);
+			if (printed)
+			{
+				printf("\n");
+				if (opt->logfile)
+					fwrite("\n", 1, 1, opt->logfile);
+			} else {
+				closed++;
+			}
 		}
+		ft_bzero(str, str_len);
+		sprintf(str, "\n%u port(s) closed\n", closed);
+		write(1, str, ft_strlen(str));
+		if (opt->logfile)
+			fwrite(str, ft_strlen(str), 1, opt->logfile);
 	}
 }
 
@@ -188,6 +229,8 @@ static int nmap_sender(t_opt *opt)
 								args->port_idx = port_idx;
 								args->scan_idx = scan_idx;
 								opt->sockets[sock_id]->available = 0;
+								// clear the thread before it starts, no matter if started before
+								pthread_join(*(opt->sockets[sock_id]->thread), NULL);
 								if (pthread_create(opt->sockets[sock_id]->thread, NULL, probe, (void *)args))
 								{
 									fprintf(stderr, "Error: Thread not created\n");
@@ -196,13 +239,7 @@ static int nmap_sender(t_opt *opt)
 								break;
 							}
 							if (sock_id == opt->threads - 1)
-							{
-								pthread_join(*(opt->sockets[0]->thread), NULL);
-								free(opt->sockets[0]->thread);
-								if ((opt->sockets[0]->thread = (pthread_t *)malloc(sizeof(pthread_t))) == NULL)
-									return (-1);
 								sock_id = 0;
-							}
 							else
 								sock_id++;
 						}
