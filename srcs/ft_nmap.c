@@ -25,7 +25,7 @@ void sig_handler(int num_sig)
 void print_results(t_opt *opt)
 {
 	struct servent *service;
-	int str_len = 256;
+	const int str_len = 256;
 	char str[str_len];
 
 	ft_bzero(str, str_len);

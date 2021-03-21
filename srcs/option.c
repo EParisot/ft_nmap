@@ -119,10 +119,10 @@ static int append_ip(t_opt *options, char *const ip)
 	t_list *new_lst;
 	struct sockaddr_in sa;
 
-	bzero(&sa, sizeof(struct sockaddr_in));
+	ft_bzero(&sa, sizeof(struct sockaddr_in));
 	if ((resolved_ip = malloc(INET_ADDRSTRLEN)) == NULL)
 		return (-1);
-	bzero(resolved_ip, INET_ADDRSTRLEN);
+	ft_bzero(resolved_ip, INET_ADDRSTRLEN);
 	if (dns_lookup(ip, resolved_ip)) 
 	{
 		free(resolved_ip);

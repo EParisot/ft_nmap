@@ -45,7 +45,7 @@ static void     my_packet_handler(uint8_t *args, const struct pcap_pkthdr *heade
 
 static int	wait_response(t_thread_arg *targs)
 {
-	int				str_len = 256;
+	const int		str_len = 256;
 	char			str_filter[str_len];
 	t_probe_arg		*args;
 	struct timeval 	start;
