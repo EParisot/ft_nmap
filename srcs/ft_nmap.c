@@ -91,7 +91,16 @@ static int nmap_sender(t_opt *opt)
 	size_t scan_idx = 0;
 
 	g_stop = false;
-	signal(SIGINT, sig_handler);
+	
+	//signal(SIGINT, sig_handler);
+	struct sigaction new_action, old_action;
+	new_action.sa_handler = sig_handler;
+	sigemptyset(&new_action.sa_mask);
+	new_action.sa_flags = 0;
+	sigaction(SIGINT, NULL, &old_action);
+	if (old_action.sa_handler != SIG_IGN)
+    	sigaction(SIGINT, &new_action, NULL);
+
 	gettimeofday(&start, NULL);
 	if ((opt->lock = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t))) == NULL)
 	{
