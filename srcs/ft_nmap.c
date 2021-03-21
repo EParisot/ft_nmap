@@ -85,11 +85,10 @@ static int nmap_sender(t_opt *opt)
 	int proto = IPPROTO_TCP;
 	struct timeval start;
 	struct timeval end;
-	int ip_count = 0;
 	size_t ip_idx = 0;
 	size_t port_idx = 0;
 	size_t scan_idx = 0;
-
+	int ip_count = 0;
 	g_stop = false;
 	
 	//signal(SIGINT, sig_handler);
@@ -145,6 +144,7 @@ static int nmap_sender(t_opt *opt)
 		tmp_port = opt->ports;
 		if (scan & opt->scanflag)
 		{
+			ip_count = 0;
 			// open sockets and create threads
 			if (scan == 64)
 				proto = IPPROTO_RAW;

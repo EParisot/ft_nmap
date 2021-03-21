@@ -223,14 +223,24 @@ static int read_scantypes(t_opt *options, char *const args[], int *optind)
 	if (args[*optind + 1] == NULL)
 		return (retmsg("ft_nmap: error: missing argument near %s\n", "--scan", -1));
 	if ((flags = ft_strsplit(args[*optind + 1], '/')) == NULL)
+	{
+		for (size_t i = 0; flags[i]; i++)
+			free(flags[i]);
+		free(flags);
 		return (retmsg("ft_nmap: error with scantype: %s\n", args[*optind + 1], -1));
+	}
 	for (size_t i = 0; i < ft_tablen(flags); i++)
 	{
 		ret = append_scantype(options, flags[i]);
 		if (ret || ret == -1)
 		{
 			if (ret == -1)
-				return (retmsg("ft_nmap: error with scantype: %s\n", flags[i], -1));
+			{
+				for (size_t i = 0; flags[i]; i++)
+					free(flags[i]);
+				free(flags);
+				return (retmsg("ft_nmap: error with scantype: %s\n", args[*optind + 1], -1));
+			}
 			break;
 		}
 	}
