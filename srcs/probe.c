@@ -105,7 +105,7 @@ void	*probe(void *vargs)
 	args->opt->sockets[args->sock_id]->available = 1;
 	pthread_mutex_lock(args->opt->lock);
 	pcap_close(args->opt->sockets[args->sock_id]->handle);
-	pcap_freecode(&(args->opt->sockets[args->sock_id]->filter)); // !!!! Unauthorized fct, to re-implement !!!!!!
+	pcap_freecode(&(args->opt->sockets[args->sock_id]->filter));
 	pthread_mutex_unlock(args->opt->lock);
 	free(args);
 	return (NULL);
